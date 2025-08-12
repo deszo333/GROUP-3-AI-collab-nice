@@ -49,6 +49,188 @@ class SmartStudentDataSystem:
         """A helper function to print messages only when debug mode is ON."""
         if self.debug_mode:
             print(message)
+            
+            
+            
+    def determine_query_type(self, query: str) -> str:
+        """
+        Uses an AI to determine the optimal search strategy: list retrieval or enrichment.
+        """
+        self.debug("🤖 Using AI to determine query type...")
+        system_prompt = """
+        You are a query classification expert. Your task is to analyze a user's query and determine the best way to handle it.
+        You must classify the query into one of two types:
+
+        1.  `list_retrieval`: Choose this if the query asks for a list or group of multiple entities based on shared criteria.
+            Examples: "3rd year bscs students", "list all faculty", "who are the students in section A"
+
+        2.  `enrichment_search`: Choose this if the query is about a specific, named entity. This type of search benefits from finding the main entity and then finding all documents related to it.
+            Examples: "who is lee pace", "what is the schedule for jane doe", "tell me about professor smith"
+
+        You MUST respond with a single, valid JSON object and nothing else, in the format: {"query_type": "list_retrieval"} or {"query_type": "enrichment_search"}.
+        """
+        user_prompt = f"Classify this query: \"{query}\""
+
+        try:
+            headers = {"Authorization": f"Bearer {self.mistral_api_key}", "Content-Type": "application/json"}
+            payload = {
+                "model": "mistral-small-latest",
+                "messages": [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
+                "response_format": {"type": "json_object"}
+            }
+            response = requests.post(self.mistral_api_url, headers=headers, data=json.dumps(payload), timeout=20)
+            response.raise_for_status()
+            content = response.json()['choices'][0]['message']['content']
+            query_type = json.loads(content).get('query_type', 'enrichment_search')
+            self.debug(f"🤖 AI classified query as: {query_type}")
+            return query_type
+        except Exception as e:
+            self.debug(f"🤖 AI query type classification failed: {e}. Defaulting to enrichment_search.")
+            return 'enrichment_search'
+        
+    # =====================NAG AI ANALYZE NG INTENT NG QUERY TAPOS ISESEND SA FILTERING LOGIC========================
+    
+    def summarize_enriched_results_with_llm(self, query, documents):
+        """
+        A new, specialized summarizer with a "Connective Synthesis" prompt,
+        used ONLY for the 'Search and Enrich' workflow.
+        """
+        self.debug("🧠 Using CONNECTIVE SYNTHESIS prompt for the final answer.")
+        context = "\n\n---\n\n".join([doc['content'] for doc in documents])
+
+        system_prompt = """
+        You are PDMAI, an expert data analyst for Pambayang Dalubhasaan ng Marilao.
+        You have been provided with a set of related documents for a specific entity. Your task is to synthesize this information into a single, direct answer.
+
+        **Core Instructions:**
+        1.  **Assume Connection:** The documents provided are related, even if they don't explicitly reference each other. Your primary job is to find and state that connection.
+        2.  **Synthesize, Don't Just List:** Do not describe the documents separately. Use the information from one document (e.g., a student's profile) to interpret another (e.g., a general class schedule).
+        3.  **Answer Directly:** Form a direct, confident answer to the user's original query using all pieces of information. For example, if you have a student's profile and their class schedule, synthesize them to state "Here is the schedule for [Student Name]..."
+        """
+        user_prompt = f"Synthesize the provided documents to form a direct answer to my query.\n\nQuery: {query}\n\nDocuments:\n{context}\n\nYour Synthesized Answer:"
+
+        # --- This API call logic is identical to your original function ---
+        headers = {}
+        payload = {}
+        api_url = ""
+
+        if self.api_mode == 'online':
+            headers = {"Authorization": f"Bearer {self.mistral_api_key}", "Content-Type": "application/json"}
+            payload = {
+                "model": "mistral-small-latest",
+                "messages": [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}]
+            }
+            api_url = self.mistral_api_url
+        elif self.api_mode == 'offline':
+            headers = {"Content-Type": "application/json"}
+            payload = {
+                "model": "mistral:instruct",
+                "messages": [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
+                "stream": False
+            }
+            api_url = self.ollama_api_url
+
+        try:
+            response = requests.post(api_url, headers=headers, data=json.dumps(payload), timeout=120)
+            response.raise_for_status()
+            response_json = response.json()
+            if 'choices' in response_json and response_json['choices']:
+                return response_json['choices'][0]['message']['content'].strip()
+            elif 'message' in response_json and 'content' in response_json['message']:
+                return response_json['message']['content'].strip()
+            else:
+                return "Error: Could not extract a valid response from the LLM."
+        except requests.exceptions.RequestException as e:
+            error_message = f"API Error: Could not connect to the LLM. Please check your connection and API settings.\nDetails: {e}"
+            if self.debug_mode:
+                print(f"❌ {error_message}")
+            return error_message
+        
+    def run_search_and_enrich_workflow(self, query, max_results=100):
+        """
+        FINAL VERSION: Calls the appropriate summarizer based on the query type.
+        """
+        query_type = self.determine_query_type(query)
+
+        if query_type == 'list_retrieval':
+            self.debug("🚀 Running Comprehensive List Retrieval...")
+            self._is_list_retrieval_mode = True
+            results = self.smart_search_with_ai_reasoning(query, max_results=max_results)
+            self._is_list_retrieval_mode = False
+            # For list retrieval, it returns the documents for the original summarizer to handle.
+            return results, False # Return results and a flag indicating it's not a final answer
+        else: # enrichment_search
+            self.debug("🚀 Running 'Search and Enrich' Workflow for a specific entity...")
+
+            anchor_documents = self.smart_search_with_ai_reasoning(query, max_results=5)
+            enriched_documents = self._enrich_results(anchor_documents)
+
+            all_documents = anchor_documents + enriched_documents
+            if not all_documents:
+                return None, True # Return None if no documents found
+
+            # --- THE CHANGE IS HERE ---
+            # For enrichment, it calls the NEW summarizer and returns the final answer directly.
+            final_answer = self.summarize_enriched_results_with_llm(query, all_documents)
+            return final_answer, True # Return the final answer string and a flag
+        
+        
+        
+    def _enrich_results(self, anchor_documents: list) -> list:
+        """
+        Takes anchor documents, builds new smart queries from their metadata,
+        and uses the main smart_search_with_ai_reasoning function to find related documents.
+        """
+        enriched_docs = []
+        if not anchor_documents:
+            return enriched_docs
+
+        # Use a set to avoid running the same follow-up query multiple times
+        follow_up_queries = set()
+
+        for doc in anchor_documents:
+            meta = doc.get('metadata', {})
+            data_type = meta.get('data_type', '')
+            new_query = ""
+
+            # For students, build a new query to find their schedule
+            if 'student' in data_type:
+                course = meta.get('course')
+                year = meta.get('year_level')
+                section = meta.get('section')
+                if course and year and section:
+                    new_query = f"schedule for {course} year {year} section {section}"
+                    follow_up_queries.add(new_query)
+
+            # For faculty, build a new query to find their schedule
+            elif 'faculty' in data_type or 'admin' in data_type:
+                name = meta.get('full_name') or meta.get('adviser_name') or meta.get('staff_name')
+                dept = meta.get('department')
+                if name and dept:
+                    new_query = f"schedule for faculty {name} from {dept} department"
+                    follow_up_queries.add(new_query)
+
+        if not follow_up_queries:
+            self.debug("🔗 No follow-up queries generated for enrichment.")
+            return enriched_docs
+
+        self.debug(f"🔗 Generated {len(follow_up_queries)} unique follow-up quer(ies): {follow_up_queries}")
+
+        # Perform a full smart search for each new query
+        for query in follow_up_queries:
+            self.debug(f"▶️ Executing follow-up smart search for: '{query}'")
+            # This calls the main search function, making the enrichment "smart"
+            results = self.smart_search_with_ai_reasoning(query, max_results=5)
+            
+            for res in results:
+                # Add a reason to the result to show it came from enrichment
+                res['match_reason'] = "Enriched by data connection"
+                enriched_docs.append(res)
+        
+        return enriched_docs
+        
+        
+    
         
     
     
@@ -58,39 +240,26 @@ class SmartStudentDataSystem:
     # =====================NAG AANALYZE NG INTENT NG QUERY TAPOS ISESEND SA FILTERING LOGIC========================
     def analyze_query_with_llm(self, query: str) -> dict:
         """
-        Uses an LLM to analyze the user's query and extract intent and entities.
-        Returns a structured dictionary.
+        FINAL VERSION: Uses more examples to make intent analysis highly reliable.
         """
-        # Default response structure
         default_intent = {
             'intent': 'general', 'target_course': None, 'target_year': None,
             'target_section': None, 'target_person': None, 'target_subject': None,
             'data_type': None
         }
 
-        # System prompt to guide the LLM
         system_prompt = f"""
-        You are an expert query analyzer for a university's data system. Your task is to analyze the user's query and extract key information in a structured JSON format.
-
-        Follow these rules precisely:
-        1.  **Identify Intent:** Determine the user's primary goal. Possible intents are:
-            - 'person_search': The user is looking for a specific person (student or faculty).
-            - 'schedule_search': The user is asking about a class schedule, COR, subjects, time, or room.
-            - 'course_specific': The user is asking about a specific academic program (e.g., BSCS, BSIT).
-            - 'general': The query is generic or doesn't fit other categories.
-
-        2.  **Extract Entities:** Identify specific details in the query. Possible entities are:
-            - 'target_person': The full name of the person being searched for (e.g., "John Doe").
-            - 'target_course': The course or program code (e.g., "BSCS", "BSIT").
-            - 'target_year': The year level as a single digit (e.g., "1", "2", "3", "4").
-            - 'target_section': The section identifier (e.g., "A", "B1").
-            - 'target_subject': The subject code (e.g., "CS101", "IT203").
-
-        3.  **Determine Data Type:** Based on the intent and entities, infer the most likely data type the user needs. Options: 'student', 'faculty', 'schedule'.
-
+        You are an expert query analyzer for a university's data system. Your task is to analyze the user's query and extract key information in a structured JSON format. Follow these rules precisely:
+        1.  **Identify Intent:** Determine the user's primary goal. Possible intents are: 'person_search', 'schedule_search', 'course_specific', 'general'.
+        2.  **Extract Entities:** Identify specific details in the query. The most important entity is 'target_person'.
+        3.  **Determine Data Type:** Infer the most likely data type the user needs. Options: 'student', 'faculty', 'schedule'.
         4.  **Output Format:** Your response MUST be a single, valid JSON object and nothing else.
-            - If you cannot extract a specific entity, its value must be `null`.
-            - Example for "who is christine from bscs 1a":
+        5.  **Be Precise:** If you cannot extract a specific entity, its value must be `null`.
+
+        Here are examples to guide you:
+
+        - Query: "who is christine from bscs 1a"
+        - Response:
               {{
                 "intent": "person_search",
                 "target_person": "Christine",
@@ -100,7 +269,9 @@ class SmartStudentDataSystem:
                 "target_subject": null,
                 "data_type": "student"
               }}
-            - Example for "what is the schedule for IT205":
+
+        - Query: "what is the schedule for IT205"
+        - Response:
               {{
                 "intent": "schedule_search",
                 "target_person": null,
@@ -110,16 +281,27 @@ class SmartStudentDataSystem:
                 "target_subject": "IT205",
                 "data_type": "schedule"
               }}
+
+        - Query: "does lee pace have a class on monday"
+        - Response:
+              {{
+                "intent": "person_search",
+                "target_person": "Lee Pace",
+                "target_course": null,
+                "target_year": null,
+                "target_section": null,
+                "target_subject": null,
+                "data_type": "schedule"
+              }}
         """
         user_prompt = f"Analyze the following user query: \"{query}\""
 
+        # --- The rest of the function remains the same ---
         headers = {}
         payload = {}
         api_url = ""
 
         if self.api_mode == 'online':
-            if self.debug_mode:
-                print("🧠 Analyzing query with Mistral AI API (Online)...")
             headers = {"Authorization": f"Bearer {self.mistral_api_key}", "Content-Type": "application/json"}
             payload = {
                 "model": "mistral-small-latest",
@@ -128,8 +310,6 @@ class SmartStudentDataSystem:
             }
             api_url = self.mistral_api_url
         elif self.api_mode == 'offline':
-            if self.debug_mode:
-                print("🧠 Analyzing query with Ollama (Offline)...")
             headers = {"Content-Type": "application/json"}
             payload = {
                 "model": "mistral:instruct",
@@ -142,140 +322,53 @@ class SmartStudentDataSystem:
         try:
             response = requests.post(api_url, headers=headers, data=json.dumps(payload), timeout=30)
             response.raise_for_status()
-
             response_json = response.json()
             content_str = ""
             if 'choices' in response_json:
                 content_str = response_json['choices'][0]['message']['content']
             elif 'message' in response_json:
                 content_str = response_json['message']['content']
-
             if self.debug_mode:
                 print(f"✅ LLM analysis raw response: {content_str}")
-
             parsed_json = json.loads(content_str.strip())
             for key in default_intent:
                 if key not in parsed_json:
                     parsed_json[key] = None
             return parsed_json
-
         except (requests.exceptions.RequestException, json.JSONDecodeError, KeyError) as e:
             if self.debug_mode:
                 print(f"❌ LLM-based intent analysis failed: {e}. Falling back to general search.")
             return default_intent
         
-        
-        
-    #  --- ETO YUNG MISMONG GUMAGAWA NG OUTPUT. FINAL ANSWER. ---
-
-    def summarize_with_llm(self, query, documents):
-        """Answers the search results using an LLM (Mistral) with an enhanced prompt."""
-
-        # Combine document content into a single string for the prompt
-        context = "\n\n---\n\n".join([doc['content'] for doc in documents])
-
-        # --- UPDATED PROMPT (AMBIGUITY RULE REMOVED) ---
-        system_prompt = """
-        You are PDMAI, the helpful AI assistant for Pambayang Dalubhasaan ng Marilao. Your goal is to answer questions accurately based on the school records provided. Your responses must always be polite, helpful, and professional.
-
-        Follow these new rules:
-        1.  **Strictly Factual:** Base your entire response ONLY on the information found in the 'Documents' provided below. Never use external knowledge, make assumptions, or guess. Accuracy is your top priority.
-
-        2.  **Synthesize and Summarize:** If a query is broad (e.g., "tell me about...") or matches multiple records, gather all relevant facts from the provided documents and present them as a concise summary. If you find multiple pieces of information, combine them into a helpful overview.
-
-        3.  **Handle Missing Information Gracefully:** If the documents contain no relevant information to answer the query, state that the information is not available in the records. However, if you find related but not direct information, present what you *did* find. For example, if asked for a phone number and you only find an email, say: "I could not find a phone number, but the records show an email address: [email]."
-
-        4.  **Be Professional:** Handle simple greetings appropriately and keep your formatting clean and easy to read.
-        """
-
-        user_prompt = f"Based ONLY on the documents below, please answer my query.\n\nQuery: {query}\n\nDocuments:\n{context}\n\nYour Answer:"
-        # --- END OF UPDATED PROMPT ---
-
-        headers = {}
-        payload = {}
-
-        if self.api_mode == 'online':
-            if self.debug_mode:
-                print("🧠 Communicating with Mistral AI API (Online)...")
-            headers = {
-                "Authorization": f"Bearer {self.mistral_api_key}",
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-            }
-            payload = {
-                "model": "mistral-small-latest",
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ]
-            }
-            api_url = self.mistral_api_url
-
-        elif self.api_mode == 'offline':
-            if self.debug_mode:
-                print("🧠 Communicating with Ollama (Offline)...")
-            headers = {"Content-Type": "application/json"}
-            payload = {
-                "model": "mistral:instruct",
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                "stream": False
-            }
-            api_url = self.ollama_api_url
-
-        try:
-            response = requests.post(api_url, headers=headers, data=json.dumps(payload), timeout=120)
-            response.raise_for_status()
-
-            response_json = response.json()
-            if 'choices' in response_json and response_json['choices']:
-                return response_json['choices'][0]['message']['content'].strip()
-            elif 'message' in response_json and 'content' in response_json['message']:
-                return response_json['message']['content'].strip()
-            else:
-                return "Error: Could not extract a valid response from the LLM."
-
-        except requests.exceptions.RequestException as e:
-            error_message = f"API Error: Could not connect to the LLM. Please check your connection and API settings.\nDetails: {e}"
-            if self.debug_mode:
-                print(f"❌ {error_message}")
-            return error_message
-        
     # ETO YUNG AI SEARCH NATIN
 
     def test_llm_search(self):
-        """New 'Test' functionality: Smart search followed by LLM summarization in a continuous loop."""
-        
-        while True:  # Start an infinite loop
+        """FINAL: Handles different return types from the workflow."""
+
+        while True:
             query = input("\nAsk PDMAI anything (or type 'exit' to quit): ").strip()
-            
-            # Check for the exit command
+
             if query.lower() == 'exit':
                 print("Returning to the main menu. Goodbye!")
-                break  # Exit the loop
+                break
 
             if not query:
-                continue # If the input is empty, just loop again
+                continue
 
-            try:
-                max_results = 100
-            except ValueError:
-                max_results = 100
-            
-            if self.debug_mode:
-                print(f"\n🔍 AI is analyzing your query for retrieval...")
-            
-            # 1. Retrieve documents using the existing AI-powered search
-            results = self.smart_search_with_ai_reasoning(query, max_results)
-            
-            # 2. Generate a summary from the results
-            summary = self.summarize_with_llm(query, results)
+            # This call now returns either a list of documents or a final answer string
+            response, is_final_answer = self.run_search_and_enrich_workflow(query)
 
-            # 3. Print the final answer
-            print("\nPDM AI: " + summary)
+            if not response:
+                print("\nPDM AI: I couldn't find any information related to your query in the school's records.")
+                continue
 
+            if is_final_answer:
+                # If the workflow returned the final answer, just print it.
+                print("\nPDM AI: " + response)
+            else:
+                # If the workflow returned documents, use the ORIGINAL summarizer.
+                summary = self.summarize_with_llm(query, response)
+                print("\nPDM AI: " + summary)
    
 
     # 🆕 --- END OF NEW METHODS ---
@@ -2352,17 +2445,20 @@ class SmartStudentDataSystem:
 
     def determine_search_strategy(self, query_intent):
         """Universal smart search strategy determination"""
-        
-        # Base universal strategy
+
+        # --- NEW ENHANCEMENT: Override for list retrieval mode ---
+        # This allows the new workflow to force a threshold of 0 for complete lists.
+        if hasattr(self, '_is_list_retrieval_mode') and self._is_list_retrieval_mode:
+            return {'type': 'list_retrieval', 'broad': True, 'threshold': 0}
+        # --- END OF ENHANCEMENT ---
+
+        # --- ORIGINAL CODE (UNCHANGED) ---
         strategy = {
             'type': 'balanced',
             'broad': True,
             'threshold': 30
         }
         
-        # SMART STRATEGY: Adjust based on query characteristics
-        
-        # High specificity = precise search regardless of intent type
         if query_intent['specificity'] == 'high':
             strategy = {
                 'type': 'precise',
@@ -2370,15 +2466,13 @@ class SmartStudentDataSystem:
                 'threshold': 70
             }
         
-        # Person search = lower threshold to catch faculty names
         elif query_intent['intent'] == 'person_search':
             strategy = {
                 'type': 'person_focused',
                 'broad': False,
-                'threshold': 25  # Lower threshold from 40 to 25 for person searches
+                'threshold': 25
             }
         
-        # Medium specificity with clear target = focused search
         elif query_intent['specificity'] == 'medium' and any([
             query_intent['target_person'], 
             query_intent['target_subject'],
@@ -2390,18 +2484,50 @@ class SmartStudentDataSystem:
                 'threshold': 50
             }
         
-        # Low specificity = broader search with lower threshold
         elif query_intent['specificity'] == 'low':
             strategy = {
                 'type': 'broad',
                 'broad': True,
                 'threshold': 25
             }
-        
+         
         return strategy
 
     def build_smart_filters(self, query_intent, collection_name):
         """Build dynamic filters based on AI analysis with correct $and operator."""
+        
+        # --- NEW ENHANCEMENT: Handle person searches flexibly ---
+        # If the user is looking for a person, we should not restrict the search
+        # based on the AI's data_type guess (e.g., 'student' vs 'faculty').
+        # Instead, we search all relevant collections and let the relevance score decide.
+        if query_intent['intent'] == 'person_search':
+            # We still build filters for other details provided with the name,
+            # like course or year, but we deliberately ignore the data_type filter.
+            person_search_conditions = []
+            if query_intent['target_course']:
+                person_search_conditions.append({'course': query_intent['target_course']})
+            if query_intent['target_year']:
+                try:
+                    year_val = int(query_intent['target_year'])
+                    person_search_conditions.append({"$or": [{'year_level': str(year_val)}, {'year_level': year_val}]})
+                except (ValueError, TypeError):
+                    person_search_conditions.append({'year_level': str(query_intent['target_year'])})
+            if query_intent['target_section']:
+                person_search_conditions.append({'section': query_intent['target_section']})
+            
+            # Construct and return the filter for the person search, bypassing the original logic.
+            if not person_search_conditions:
+                return {} # Return empty filter to search everywhere for the name
+            elif len(person_search_conditions) == 1:
+                return person_search_conditions[0]
+            else:
+                return {"$and": person_search_conditions}
+        # --- END OF ENHANCEMENT ---
+
+
+        # --- ORIGINAL CODE (UNCHANGED) ---
+        # This original logic will now only run for non-person searches (e.g., schedule_search),
+        # where the data_type filter is still essential.
         conditions = []
         
         # Only apply filters if we have specific targets
@@ -2435,8 +2561,6 @@ class SmartStudentDataSystem:
             return conditions[0]
         else:
             return {"$and": conditions}
-        
-        return where_clause
 
 
     def calculate_ai_relevance(self, query_intent, document, metadata, chroma_distance):
@@ -2444,6 +2568,35 @@ class SmartStudentDataSystem:
         score = 0
         doc_upper = document.upper()
 
+        # --- NEW ENHANCEMENT 1: GUARANTEE CONSISTENT PERSON SEARCH ---
+        # This logic runs first. If it's a clear person search with a name match,
+        # it returns a high score immediately, fixing the inconsistency issue.
+        if query_intent['intent'] == 'person_search' and query_intent['target_person']:
+            target_person_upper = query_intent['target_person'].upper()
+            if (metadata.get('full_name') and target_person_upper in metadata['full_name'].upper()) or \
+               (target_person_upper in doc_upper):
+                if self.debug_mode: print(f"🎯 DEFINITIVE PERSON MATCH. Score set to 95.")
+                return 95
+
+        # --- NEW ENHANCEMENT 2: GUARANTEE COMPLETE LISTS ---
+        # This logic adds a large boost for broad category queries to ensure all
+        # relevant documents (like all 30 students) get a high score.
+        is_list_query = bool(query_intent.get('target_course') or query_intent.get('target_year'))
+        is_person_query = bool(query_intent.get('target_person'))
+        if is_list_query and not is_person_query:
+            course_match = (query_intent['target_course'] and metadata.get('course') and query_intent['target_course'].upper() in str(metadata.get('course')).upper())
+            year_match = (query_intent['target_year'] and str(metadata.get('year_level')) == str(query_intent['target_year']))
+            
+            if course_match and year_match:
+                score += 80
+                if self.debug_mode: print(f"🎯 STRONG CATEGORY MATCH (Course & Year). +80")
+            elif course_match or year_match:
+                score += 60
+                if self.debug_mode: print(f"🎯 CATEGORY MATCH (Course or Year). +60")
+        
+        # --- ORIGINAL CODE (UNCHANGED) ---
+        # The original logic below is preserved and acts as the baseline.
+        
         # Convert ChromaDB distance to a base semantic score
         semantic_base_score = max(0, 70 - (chroma_distance * 2))
         score += semantic_base_score
@@ -2516,7 +2669,7 @@ class SmartStudentDataSystem:
                 score += 15
             if query_intent['target_year'] and str(metadata.get('year_level')) == str(query_intent['target_year']):
                 score += 15
-            if query_intent['target_section'] and metadata.get('section') and query_intent['section'] in metadata['section'].upper():
+            if query_intent['target_section'] and metadata.get('section') and query_intent['target_section'] in metadata['section'].upper():
                 score += 15
 
         final_score = max(0, min(100, score))
