@@ -13,15 +13,13 @@ from datetime import datetime
 from chromadb.utils import embedding_functions # Import for consistent embedding function
 import requests # 🆕 ADD THIS IMPORT
 import json # 🆕 ADD THIS IMPORT
+from ai_analyst import AIAnalyst, load_llm_config
 
+warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 class SmartStudentDataSystem:
-    
-    
-    """A smart student data system that uses AI to analyze queries and retrieve relevant information."""
     def __init__(self):
-        
         self.client = chromadb.PersistentClient(path="./chroma_store")
         # Initialize the SentenceTransformer model for 384-dimensional embeddings
         self.model = SentenceTransformer("all-MiniLM-L6-v2") 
@@ -31,353 +29,18 @@ class SmartStudentDataSystem:
         )
         self.collections = {}
         self.data_loaded = False
-        
-        # 🆕 --- START OF NEW CODE ---
-        # System Configuration Options
         self.debug_mode = False  # Set to False for clean, user-facing output
         self.api_mode = 'online' # Options: 'online' or 'offline'
+
         
-        # API Credentials and Endpoints
-        self.mistral_api_key = "fcbJyUY4pHwpCNOTB7Wq3IZaivGdzz01"
-        self.mistral_api_url = "https://api.mistral.ai/v1/chat/completions"
-        self.ollama_api_url = "http://localhost:11434/api/chat" # Standard Ollama API endpoint
-        # 🆕 --- END OF NEW CODE ---
         
-     
-    # ======================== HELPER FUNCTIONS ========================   
+        # ======================== HELPER FUNCTIONS ========================   
     def debug(self, message):
         """A helper function to print messages only when debug mode is ON."""
         if self.debug_mode:
             print(message)
             
             
-            
-    def determine_query_type(self, query: str) -> str:
-        """
-        Uses an AI to determine the optimal search strategy: list retrieval or enrichment.
-        """
-        self.debug("🤖 Using AI to determine query type...")
-        system_prompt = """
-        You are a query classification expert. Your task is to analyze a user's query and determine the best way to handle it.
-        You must classify the query into one of two types:
-
-        1.  `list_retrieval`: Choose this if the query asks for a list or group of multiple entities based on shared criteria.
-            Examples: "3rd year bscs students", "list all faculty", "who are the students in section A"
-
-        2.  `enrichment_search`: Choose this if the query is about a specific, named entity. This type of search benefits from finding the main entity and then finding all documents related to it.
-            Examples: "who is lee pace", "what is the schedule for jane doe", "tell me about professor smith"
-
-        You MUST respond with a single, valid JSON object and nothing else, in the format: {"query_type": "list_retrieval"} or {"query_type": "enrichment_search"}.
-        """
-        user_prompt = f"Classify this query: \"{query}\""
-
-        try:
-            headers = {"Authorization": f"Bearer {self.mistral_api_key}", "Content-Type": "application/json"}
-            payload = {
-                "model": "mistral-small-latest",
-                "messages": [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
-                "response_format": {"type": "json_object"}
-            }
-            response = requests.post(self.mistral_api_url, headers=headers, data=json.dumps(payload), timeout=20)
-            response.raise_for_status()
-            content = response.json()['choices'][0]['message']['content']
-            query_type = json.loads(content).get('query_type', 'enrichment_search')
-            self.debug(f"🤖 AI classified query as: {query_type}")
-            return query_type
-        except Exception as e:
-            self.debug(f"🤖 AI query type classification failed: {e}. Defaulting to enrichment_search.")
-            return 'enrichment_search'
-        
-    # =====================NAG AI ANALYZE NG INTENT NG QUERY TAPOS ISESEND SA FILTERING LOGIC========================
-    
-    def summarize_enriched_results_with_llm(self, query, documents):
-        """
-        A new, specialized summarizer with a "Connective Synthesis" prompt,
-        used ONLY for the 'Search and Enrich' workflow.
-        """
-        self.debug("🧠 Using CONNECTIVE SYNTHESIS prompt for the final answer.")
-        context = "\n\n---\n\n".join([doc['content'] for doc in documents])
-
-        system_prompt = """
-        You are PDMAI, an expert data analyst for Pambayang Dalubhasaan ng Marilao.
-        You have been provided with a set of related documents for a specific entity. Your task is to synthesize this information into a single, direct answer.
-
-        **Core Instructions:**
-        1.  **Assume Connection:** The documents provided are related, even if they don't explicitly reference each other. Your primary job is to find and state that connection.
-        2.  **Synthesize, Don't Just List:** Do not describe the documents separately. Use the information from one document (e.g., a student's profile) to interpret another (e.g., a general class schedule).
-        3.  **Answer Directly:** Form a direct, confident answer to the user's original query using all pieces of information. For example, if you have a student's profile and their class schedule, synthesize them to state "Here is the schedule for [Student Name]..."
-        """
-        user_prompt = f"Synthesize the provided documents to form a direct answer to my query.\n\nQuery: {query}\n\nDocuments:\n{context}\n\nYour Synthesized Answer:"
-
-        # --- This API call logic is identical to your original function ---
-        headers = {}
-        payload = {}
-        api_url = ""
-
-        if self.api_mode == 'online':
-            headers = {"Authorization": f"Bearer {self.mistral_api_key}", "Content-Type": "application/json"}
-            payload = {
-                "model": "mistral-small-latest",
-                "messages": [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}]
-            }
-            api_url = self.mistral_api_url
-        elif self.api_mode == 'offline':
-            headers = {"Content-Type": "application/json"}
-            payload = {
-                "model": "mistral:instruct",
-                "messages": [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
-                "stream": False
-            }
-            api_url = self.ollama_api_url
-
-        try:
-            response = requests.post(api_url, headers=headers, data=json.dumps(payload), timeout=120)
-            response.raise_for_status()
-            response_json = response.json()
-            if 'choices' in response_json and response_json['choices']:
-                return response_json['choices'][0]['message']['content'].strip()
-            elif 'message' in response_json and 'content' in response_json['message']:
-                return response_json['message']['content'].strip()
-            else:
-                return "Error: Could not extract a valid response from the LLM."
-        except requests.exceptions.RequestException as e:
-            error_message = f"API Error: Could not connect to the LLM. Please check your connection and API settings.\nDetails: {e}"
-            if self.debug_mode:
-                print(f"❌ {error_message}")
-            return error_message
-        
-    def run_search_and_enrich_workflow(self, query, max_results=100):
-        """
-        FINAL VERSION: Calls the appropriate summarizer based on the query type.
-        """
-        query_type = self.determine_query_type(query)
-
-        if query_type == 'list_retrieval':
-            self.debug("🚀 Running Comprehensive List Retrieval...")
-            self._is_list_retrieval_mode = True
-            results = self.smart_search_with_ai_reasoning(query, max_results=max_results)
-            self._is_list_retrieval_mode = False
-            # For list retrieval, it returns the documents for the original summarizer to handle.
-            return results, False # Return results and a flag indicating it's not a final answer
-        else: # enrichment_search
-            self.debug("🚀 Running 'Search and Enrich' Workflow for a specific entity...")
-
-            anchor_documents = self.smart_search_with_ai_reasoning(query, max_results=5)
-            enriched_documents = self._enrich_results(anchor_documents)
-
-            all_documents = anchor_documents + enriched_documents
-            if not all_documents:
-                return None, True # Return None if no documents found
-
-            # --- THE CHANGE IS HERE ---
-            # For enrichment, it calls the NEW summarizer and returns the final answer directly.
-            final_answer = self.summarize_enriched_results_with_llm(query, all_documents)
-            return final_answer, True # Return the final answer string and a flag
-        
-        
-        
-    def _enrich_results(self, anchor_documents: list) -> list:
-        """
-        Takes anchor documents, builds new smart queries from their metadata,
-        and uses the main smart_search_with_ai_reasoning function to find related documents.
-        """
-        enriched_docs = []
-        if not anchor_documents:
-            return enriched_docs
-
-        # Use a set to avoid running the same follow-up query multiple times
-        follow_up_queries = set()
-
-        for doc in anchor_documents:
-            meta = doc.get('metadata', {})
-            data_type = meta.get('data_type', '')
-            new_query = ""
-
-            # For students, build a new query to find their schedule
-            if 'student' in data_type:
-                course = meta.get('course')
-                year = meta.get('year_level')
-                section = meta.get('section')
-                if course and year and section:
-                    new_query = f"schedule for {course} year {year} section {section}"
-                    follow_up_queries.add(new_query)
-
-            # For faculty, build a new query to find their schedule
-            elif 'faculty' in data_type or 'admin' in data_type:
-                name = meta.get('full_name') or meta.get('adviser_name') or meta.get('staff_name')
-                dept = meta.get('department')
-                if name and dept:
-                    new_query = f"schedule for faculty {name} from {dept} department"
-                    follow_up_queries.add(new_query)
-
-        if not follow_up_queries:
-            self.debug("🔗 No follow-up queries generated for enrichment.")
-            return enriched_docs
-
-        self.debug(f"🔗 Generated {len(follow_up_queries)} unique follow-up quer(ies): {follow_up_queries}")
-
-        # Perform a full smart search for each new query
-        for query in follow_up_queries:
-            self.debug(f"▶️ Executing follow-up smart search for: '{query}'")
-            # This calls the main search function, making the enrichment "smart"
-            results = self.smart_search_with_ai_reasoning(query, max_results=5)
-            
-            for res in results:
-                # Add a reason to the result to show it came from enrichment
-                res['match_reason'] = "Enriched by data connection"
-                enriched_docs.append(res)
-        
-        return enriched_docs
-        
-        
-    
-        
-    
-    
-        
-        
-    
-    # =====================NAG AANALYZE NG INTENT NG QUERY TAPOS ISESEND SA FILTERING LOGIC========================
-    def analyze_query_with_llm(self, query: str) -> dict:
-        """
-        FINAL VERSION: Uses more examples to make intent analysis highly reliable.
-        """
-        default_intent = {
-            'intent': 'general', 'target_course': None, 'target_year': None,
-            'target_section': None, 'target_person': None, 'target_subject': None,
-            'data_type': None
-        }
-
-        system_prompt = f"""
-        You are an expert query analyzer for a university's data system. Your task is to analyze the user's query and extract key information in a structured JSON format. Follow these rules precisely:
-        1.  **Identify Intent:** Determine the user's primary goal. Possible intents are: 'person_search', 'schedule_search', 'course_specific', 'general'.
-        2.  **Extract Entities:** Identify specific details in the query. The most important entity is 'target_person'.
-        3.  **Determine Data Type:** Infer the most likely data type the user needs. Options: 'student', 'faculty', 'schedule'.
-        4.  **Output Format:** Your response MUST be a single, valid JSON object and nothing else.
-        5.  **Be Precise:** If you cannot extract a specific entity, its value must be `null`.
-
-        Here are examples to guide you:
-
-        - Query: "who is christine from bscs 1a"
-        - Response:
-              {{
-                "intent": "person_search",
-                "target_person": "Christine",
-                "target_course": "BSCS",
-                "target_year": "1",
-                "target_section": "A",
-                "target_subject": null,
-                "data_type": "student"
-              }}
-
-        - Query: "what is the schedule for IT205"
-        - Response:
-              {{
-                "intent": "schedule_search",
-                "target_person": null,
-                "target_course": null,
-                "target_year": null,
-                "target_section": null,
-                "target_subject": "IT205",
-                "data_type": "schedule"
-              }}
-
-        - Query: "does lee pace have a class on monday"
-        - Response:
-              {{
-                "intent": "person_search",
-                "target_person": "Lee Pace",
-                "target_course": null,
-                "target_year": null,
-                "target_section": null,
-                "target_subject": null,
-                "data_type": "schedule"
-              }}
-        """
-        user_prompt = f"Analyze the following user query: \"{query}\""
-
-        # --- The rest of the function remains the same ---
-        headers = {}
-        payload = {}
-        api_url = ""
-
-        if self.api_mode == 'online':
-            headers = {"Authorization": f"Bearer {self.mistral_api_key}", "Content-Type": "application/json"}
-            payload = {
-                "model": "mistral-small-latest",
-                "messages": [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
-                "response_format": {"type": "json_object"}
-            }
-            api_url = self.mistral_api_url
-        elif self.api_mode == 'offline':
-            headers = {"Content-Type": "application/json"}
-            payload = {
-                "model": "mistral:instruct",
-                "messages": [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
-                "format": "json",
-                "stream": False
-            }
-            api_url = self.ollama_api_url
-
-        try:
-            response = requests.post(api_url, headers=headers, data=json.dumps(payload), timeout=30)
-            response.raise_for_status()
-            response_json = response.json()
-            content_str = ""
-            if 'choices' in response_json:
-                content_str = response_json['choices'][0]['message']['content']
-            elif 'message' in response_json:
-                content_str = response_json['message']['content']
-            if self.debug_mode:
-                print(f"✅ LLM analysis raw response: {content_str}")
-            parsed_json = json.loads(content_str.strip())
-            for key in default_intent:
-                if key not in parsed_json:
-                    parsed_json[key] = None
-            return parsed_json
-        except (requests.exceptions.RequestException, json.JSONDecodeError, KeyError) as e:
-            if self.debug_mode:
-                print(f"❌ LLM-based intent analysis failed: {e}. Falling back to general search.")
-            return default_intent
-        
-    # ETO YUNG AI SEARCH NATIN
-
-    def test_llm_search(self):
-        """FINAL: Handles different return types from the workflow."""
-
-        while True:
-            query = input("\nAsk PDMAI anything (or type 'exit' to quit): ").strip()
-
-            if query.lower() == 'exit':
-                print("Returning to the main menu. Goodbye!")
-                break
-
-            if not query:
-                continue
-
-            # This call now returns either a list of documents or a final answer string
-            response, is_final_answer = self.run_search_and_enrich_workflow(query)
-
-            if not response:
-                print("\nPDM AI: I couldn't find any information related to your query in the school's records.")
-                continue
-
-            if is_final_answer:
-                # If the workflow returned the final answer, just print it.
-                print("\nPDM AI: " + response)
-            else:
-                # If the workflow returned documents, use the ORIGINAL summarizer.
-                summary = self.summarize_with_llm(query, response)
-                print("\nPDM AI: " + summary)
-   
-
-    # 🆕 --- END OF NEW METHODS ---
-    
-    
-    
-    
-    # 🆕 --- START OF NEW METHODS ---
-
     def toggle_debug_mode(self):
         """Toggles the debug mode on or off."""
         self.debug_mode = not self.debug_mode
@@ -417,8 +80,8 @@ class SmartStudentDataSystem:
             except KeyboardInterrupt:
                 break
         print("\n↩️ Returning to main menu...")
-
-    # 🆕 --- END OF NEW METHODS ---
+            
+        
         
     # ======================== INITIALIZATION & SETUP ========================
     
@@ -456,7 +119,7 @@ class SmartStudentDataSystem:
                 program_display = program.upper() if program else 'GENERAL'
                 return f"Curriculum - {dept_display} {program_display}".strip()
             
-            # STUDENTS collection type
+            # STUDENTS collection type (including grades)
             elif base_type == "students":
                 course = parts[2] if len(parts) > 2 else ""
                 year = parts[3] if len(parts) > 3 else ""
@@ -466,8 +129,12 @@ class SmartStudentDataSystem:
                 year_display = year.replace('year', 'Year ') if year and 'year' in year else ''
                 section_display = section.replace('sec', 'Section ').upper() if section and 'sec' in section else ''
                 
-                return f"Students - {dept_display} {course_display} {year_display} {section_display}".strip().replace('  ', ' ')
-                
+                # Check if this is a grades collection
+                if len(parts) > 5 and parts[5] == "grades":
+                    return f"Students - {dept_display} {course_display} {year_display} {section_display} Grades".strip().replace('  ', ' ')
+                else:
+                    return f"Students - {dept_display} {course_display} {year_display} {section_display}".strip().replace('  ', ' ')
+                    
             # SCHEDULES collection type
             elif base_type == "schedules":
                 course = parts[2] if len(parts) > 2 else ""
@@ -614,15 +281,15 @@ class SmartStudentDataSystem:
                 df_check = pd.read_excel(filename, header=None)
                 if self.is_cor_file(df_check):
                     return "COR Schedule (Excel)"
-                elif self.is_non_teaching_faculty_schedule_excel(df_check, silent=True):  # 🆕 ADD silent=True
+                elif self.is_non_teaching_faculty_schedule_excel(df_check, silent=True):
                     return "Non-Teaching Faculty Schedule (Excel)"
-                elif self.is_faculty_schedule_excel(df_check, silent=True):  # 🆕 ADD silent=True
+                elif self.is_faculty_schedule_excel(df_check, silent=True):
                     return "Faculty Schedule (Excel)"
-                elif self.is_admin_excel(df_check, silent=True):  # 🆕 ADD silent=True
+                elif self.is_admin_excel(df_check, silent=True):
                     return "Admin Data (Excel)"
-                elif self.is_non_teaching_faculty_excel(df_check, silent=True):  # 🆕 ADD silent=True
+                elif self.is_non_teaching_faculty_excel(df_check, silent=True):
                     return "Non-Teaching Faculty Data (Excel)"
-                elif self.is_teaching_faculty_excel(df_check, silent=True):  # 🆕 ADD silent=True
+                elif self.is_teaching_faculty_excel(df_check, silent=True):
                     return "Teaching Faculty Data (Excel)"
                 elif self.is_faculty_excel(df_check):
                     return "Faculty Data (Excel)"
@@ -632,21 +299,28 @@ class SmartStudentDataSystem:
                 return "Excel File"
                 
         elif ext == ".pdf":
-            # Check filename patterns
+            # Check filename patterns first
             if any(x in filename_lower for x in ['resume', 'cv']):
-                return "Faculty Data (PDF)"
+                # NEW: Check if it's specifically a teaching faculty resume
+                if self.is_teaching_faculty_resume_pdf(filename):
+                    return "Teaching Faculty Resume (PDF)"
+                else:
+                    return "Faculty Data (PDF)"
             elif 'cor' in filename_lower:
                 return "COR Schedule (PDF)"
             elif 'schedule' in filename_lower:
                 return "Faculty Schedule (PDF)"
             elif any(x in filename_lower for x in ['student', 'year', 'synthetic']):
                 return "Student Data (PDF)"
-                
-            # Check content
+            
+            # Check content if filename is unclear
             if self.is_cor_pdf(filename):
                 return "COR Schedule (PDF)"
             elif self.is_faculty_schedule_pdf(filename):
                 return "Faculty Schedule (PDF)"
+            # NEW: Check for teaching faculty resume before general faculty
+            elif self.is_teaching_faculty_resume_pdf(filename):
+                return "Teaching Faculty Resume (PDF)"
             elif self.is_faculty_pdf(filename):
                 return "Faculty Data (PDF)"
             else:
@@ -654,15 +328,1133 @@ class SmartStudentDataSystem:
         
         return "Unknown"
     
-    # ======================== UNIVERSAL DATA EXTRACTION ========================
+    
+    # ======================== STUDENT GRADES PROCESSING ========================
+
+    def is_student_grades_excel(self, df, silent=False):
+        """Check for Student Grades Excel files"""
+        try:
+            # Convert first 20 rows to text
+            first_rows_text = ""
+            for i in range(min(20, df.shape[0])):
+                for j in range(df.shape[1]):
+                    if pd.notna(df.iloc[i, j]):
+                        first_rows_text += str(df.iloc[i, j]).upper() + " "
+            
+            if not silent:
+                print(f"🔍 Checking if file is student grades...")
+            
+            # Student grades indicators
+            grades_indicators = [
+                "STUDENT NUMBER", "STUDENT NAME", "SUBJECT CODE", "SUBJECT DESCRIPTION",
+                "UNITS", "EQUIVALENT", "GRADE", "GRADES", "REMARKS", "GWA",
+                "ACADEMIC RECORD", "TRANSCRIPT", "GRADING", "FINAL GRADE"
+            ]
+            
+            # Grade-specific patterns
+            grade_patterns = [
+                "1.0", "1.25", "1.5", "1.75", "2.0", "2.25", "2.5", "2.75", "3.0",
+                "PASSED", "FAILED", "INCOMPLETE", "DROPPED"
+            ]
+            
+            # Count indicators
+            grades_indicator_count = sum(1 for indicator in grades_indicators if indicator in first_rows_text)
+            has_grade_patterns = any(pattern in first_rows_text for pattern in grade_patterns)
+            
+            # Should NOT have faculty or schedule indicators
+            faculty_indicators = ["FACULTY", "PROFESSOR", "INSTRUCTOR", "ADVISER", "SCHEDULE", "TIME", "ROOM"]
+            curriculum_indicators = ["CURRICULUM", "COURSE CURRICULUM", "SYLLABUS"]
+            
+            has_faculty_indicator = any(indicator in first_rows_text for indicator in faculty_indicators)
+            has_curriculum_indicator = any(indicator in first_rows_text for indicator in curriculum_indicators)
+            
+            # Grades detection logic
+            is_grades = (
+                grades_indicator_count >= 4 and
+                not has_faculty_indicator and
+                not has_curriculum_indicator
+            )
+            
+            if not silent:
+                print(f"🔍 Grades indicators: {grades_indicator_count}")
+                print(f"🔍 Has grade patterns: {has_grade_patterns}")
+                print(f"🔍 Is student grades: {is_grades}")
+            
+            return is_grades
+            
+        except Exception as e:
+            if not silent:
+                print(f"🔍 Error in grades detection: {e}")
+            return False
+        
+    def extract_student_grades_excel_info_smart(self, filename):
+        """Universal student grades extraction that works with ANY Excel format"""
+        try:
+            df_full = pd.read_excel(filename, header=None)
+            print(f"📋 Student Grades Excel dimensions: {df_full.shape}")
+            
+            # DEBUG: Show the actual Excel content
+            print(f"📋 Raw Excel content (first 15 rows):")
+            for i in range(min(15, df_full.shape[0])):
+                row_data = []
+                for j in range(min(df_full.shape[1], 8)):  # Show first 8 columns
+                    if pd.notna(df_full.iloc[i, j]):
+                        row_data.append(f"'{str(df_full.iloc[i, j])}'")
+                    else:
+                        row_data.append("'N/A'")
+                print(f"   Row {i}: {row_data}")
+            
+            # STEP 1: Extract student metadata (name, course, etc.)
+            student_info = self.extract_grades_student_metadata(df_full, filename)
+            print(f"📋 Extracted Student Info: {student_info}")
+            
+            # STEP 2: Extract grade records
+            grades_data = self.extract_grades_records(df_full)
+            print(f"📋 Found {len(grades_data)} grade records")
+            
+            return {
+                'student_info': student_info,
+                'grades': grades_data
+            }
+            
+        except Exception as e:
+            print(f"❌ Error in student grades extraction: {e}")
+            return None
+
+    def extract_grades_student_metadata(self, df, filename):
+        """Extract student metadata from grades file"""
+        student_info = {
+            'student_number': '',
+            'student_name': '',
+            'course': '',
+            'gwa': ''
+        }
+        
+        # Search for student information in first 20 rows
+        for i in range(min(20, df.shape[0])):
+            for j in range(min(df.shape[1], 10)):
+                if pd.notna(df.iloc[i, j]):
+                    cell_value = str(df.iloc[i, j]).strip()
+                    cell_upper = cell_value.upper()
+                    
+                    # Look for student number/ID
+                    if any(keyword in cell_upper for keyword in ['STUDENT NUMBER:', 'STUDENT ID:', 'ID NUMBER:']):
+                        # Check adjacent cells for the actual number
+                        id_value = None
+                        
+                        # Check right cell
+                        if j + 1 < df.shape[1] and pd.notna(df.iloc[i, j + 1]):
+                            potential_id = str(df.iloc[i, j + 1]).strip()
+                            if len(potential_id) > 2:
+                                id_value = potential_id
+                        
+                        # Check if current cell contains the ID after colon
+                        if not id_value and ':' in cell_value:
+                            parts = cell_value.split(':', 1)
+                            if len(parts) > 1:
+                                potential_id = parts[1].strip()
+                                if len(potential_id) > 2:
+                                    id_value = potential_id
+                        
+                        if id_value:
+                            student_info['student_number'] = id_value.upper()
+                            print(f"🎯 Found student number: {id_value}")
+                    
+                    # Look for student name
+                    if any(keyword in cell_upper for keyword in ['STUDENT NAME:', 'NAME:', 'FULL NAME:']):
+                        name_value = None
+                        
+                        # Check right cell
+                        if j + 1 < df.shape[1] and pd.notna(df.iloc[i, j + 1]):
+                            potential_name = str(df.iloc[i, j + 1]).strip()
+                            if len(potential_name) > 2:
+                                name_value = potential_name
+                        
+                        # Check if current cell contains the name after colon
+                        if not name_value and ':' in cell_value:
+                            parts = cell_value.split(':', 1)
+                            if len(parts) > 1:
+                                potential_name = parts[1].strip()
+                                if len(potential_name) > 2:
+                                    name_value = potential_name
+                        
+                        if name_value:
+                            student_info['student_name'] = name_value.title()
+                            print(f"🎯 Found student name: {name_value}")
+                    
+                    # Look for course
+                    if any(keyword in cell_upper for keyword in ['COURSE:', 'PROGRAM:', 'DEGREE:']):
+                        course_value = None
+                        
+                        # Check right cell
+                        if j + 1 < df.shape[1] and pd.notna(df.iloc[i, j + 1]):
+                            potential_course = str(df.iloc[i, j + 1]).strip()
+                            if len(potential_course) > 1:
+                                course_value = potential_course
+                        
+                        # Check if current cell contains the course after colon
+                        if not course_value and ':' in cell_value:
+                            parts = cell_value.split(':', 1)
+                            if len(parts) > 1:
+                                potential_course = parts[1].strip()
+                                if len(potential_course) > 1:
+                                    course_value = potential_course
+                        
+                        if course_value:
+                            # Extract course code
+                            course_match = re.search(r'(BS[A-Z]{2,4}|AB[A-Z]{2,4})', course_value.upper())
+                            if course_match:
+                                student_info['course'] = course_match.group(1)
+                            else:
+                                student_info['course'] = course_value.upper()
+                            print(f"🎯 Found course: {course_value}")
+                    
+                    # Look for GWA
+                    if any(keyword in cell_upper for keyword in ['GWA:', 'GENERAL WEIGHTED AVERAGE:', 'AVERAGE:']):
+                        gwa_value = None
+                        
+                        # Check right cell
+                        if j + 1 < df.shape[1] and pd.notna(df.iloc[i, j + 1]):
+                            potential_gwa = str(df.iloc[i, j + 1]).strip()
+                            if self.is_valid_grade(potential_gwa):
+                                gwa_value = potential_gwa
+                        
+                        # Check if current cell contains the GWA after colon
+                        if not gwa_value and ':' in cell_value:
+                            parts = cell_value.split(':', 1)
+                            if len(parts) > 1:
+                                potential_gwa = parts[1].strip()
+                                if self.is_valid_grade(potential_gwa):
+                                    gwa_value = potential_gwa
+                        
+                        if gwa_value:
+                            student_info['gwa'] = gwa_value
+                            print(f"🎯 Found GWA: {gwa_value}")
+        
+        # Fallback: infer from filename if missing
+        if not student_info['course']:
+            filename_course = self.extract_course_from_filename(filename)
+            if filename_course:
+                student_info['course'] = filename_course
+                print(f"🎯 Inferred course from filename: {filename_course}")
+        
+        return student_info
+
+    def extract_grades_records(self, df):
+        """Extract individual grade records from the grades table"""
+        grades_data = []
+        
+        # Find the header row
+        header_row = -1
+        column_mapping = {}
+        
+        # Field mappings for grades
+        field_mappings = {
+            'subject_code': ['SUBJECT CODE', 'SUBJ CODE', 'CODE', 'COURSE CODE'],
+            'subject_description': ['SUBJECT DESCRIPTION', 'DESCRIPTION', 'SUBJECT NAME', 'COURSE TITLE', 'TITLE'],
+            'units': ['UNITS', 'CREDITS', 'CREDIT UNITS', 'CR'],
+            'equivalent': ['EQUIVALENT', 'GRADE', 'FINAL GRADE', 'RATING'],
+            'remarks': ['REMARKS', 'STATUS', 'RESULT', 'COMMENT']
+        }
+        
+        # Search for header row
+        for i in range(min(15, df.shape[0])):
+            row_text = ' '.join([str(df.iloc[i, j]) for j in range(min(df.shape[1], 15)) if pd.notna(df.iloc[i, j])]).upper()
+            
+            # Check if this row contains multiple field headers
+            header_count = 0
+            for field, possible_headers in field_mappings.items():
+                for header in possible_headers:
+                    if header in row_text:
+                        header_count += 1
+                        break
+            
+            if header_count >= 3:  # Found header row
+                header_row = i
+                print(f"🎯 Found grades header at row {i}")
+                break
+        
+        if header_row == -1:
+            print("⚠️ Could not find grades header row")
+            return []
+        
+        # Map columns
+        header_cells = []
+        for j in range(df.shape[1]):
+            if pd.notna(df.iloc[header_row, j]):
+                header_text = str(df.iloc[header_row, j]).strip().upper()
+                header_cells.append((j, header_text))
+            else:
+                header_cells.append((j, ''))
+        
+        print(f"📋 Header cells: {header_cells}")
+        
+        # Map each field to the best matching column
+        for field, possible_headers in field_mappings.items():
+            best_match = None
+            best_score = 0
+            
+            for col_idx, header_text in header_cells:
+                for possible_header in possible_headers:
+                    if possible_header in header_text:
+                        score = len(possible_header) if header_text == possible_header else len(possible_header) - 1
+                        if score > best_score:
+                            best_score = score
+                            best_match = col_idx
+            
+            if best_match is not None:
+                column_mapping[field] = best_match
+                print(f"🎯 Mapped {field} to column {best_match} ({header_cells[best_match][1]})")
+        
+        print(f"📋 Final column mapping: {column_mapping}")
+        
+        # Extract grade records
+        for i in range(header_row + 1, df.shape[0]):
+            # Skip empty rows
+            if all(pd.isna(df.iloc[i, j]) for j in range(df.shape[1])):
+                continue
+            
+            # Skip footer rows
+            first_cell = str(df.iloc[i, 0]) if pd.notna(df.iloc[i, 0]) else ""
+            if any(keyword in first_cell.upper() for keyword in ['TOTAL', 'GWA', 'AVERAGE', 'SUMMARY']):
+                break
+            
+            # Extract grade data
+            grade_entry = {}
+            valid_entry = False
+            
+            for field, col_idx in column_mapping.items():
+                if col_idx < df.shape[1] and pd.notna(df.iloc[i, col_idx]):
+                    value = str(df.iloc[i, col_idx]).strip()
+                    if value and value.upper() not in ['N/A', 'NONE', 'TBA', 'TBD']:
+                        cleaned_value = self.clean_grades_value(value, field)
+                        if cleaned_value:
+                            grade_entry[field] = cleaned_value
+                            if field in ['subject_code', 'subject_description']:
+                                valid_entry = True
+            
+            # Set defaults for missing fields
+            for field in field_mappings.keys():
+                if field not in grade_entry:
+                    grade_entry[field] = self.get_default_grades_value(field)
+            
+            # Only add if we have essential fields
+            if valid_entry and (grade_entry.get('subject_code') or grade_entry.get('subject_description')):
+                grades_data.append(grade_entry)
+                print(f"📚 Added grade: {grade_entry.get('subject_code', 'N/A')} - {grade_entry.get('equivalent', 'N/A')}")
+        
+        return grades_data
+
+    def clean_grades_value(self, value, field_type):
+        """Clean extracted values for grades fields"""
+        if not value or len(value.strip()) == 0:
+            return None
+        
+        value = value.strip()
+        
+        if field_type == 'subject_code':
+            # Clean subject codes
+            cleaned = re.sub(r'[^A-Z0-9\-]', '', value.upper())
+            return cleaned if cleaned and len(cleaned) >= 2 else None
+        
+        elif field_type == 'subject_description':
+            # Keep subject descriptions as-is but clean them
+            if len(value) > 1 and value.upper() not in ['N/A', 'NONE', 'TBA', 'TBD']:
+                return value.title()
+            return None
+        
+        elif field_type == 'units':
+            # Extract numeric values for units
+            numeric_match = re.search(r'(\d+(?:\.\d+)?)', value)
+            return numeric_match.group(1) if numeric_match else '3'
+        
+        elif field_type == 'equivalent':
+            # Clean grade values
+            if self.is_valid_grade(value):
+                return value
+            return None
+        
+        elif field_type == 'remarks':
+            # Clean remarks
+            cleaned = value.upper().strip()
+            valid_remarks = ['PASSED', 'FAILED', 'INCOMPLETE', 'DROPPED', 'WITHDREW', 'INC', 'DRP', 'P', 'F']
+            for remark in valid_remarks:
+                if remark in cleaned:
+                    return remark
+            return cleaned if len(cleaned) > 0 else 'PASSED'
+        
+        return value
+
+    def is_valid_grade(self, grade_str):
+        """Check if a string is a valid grade"""
+        try:
+            # Check if it's a numeric grade (1.0 - 5.0)
+            grade_float = float(grade_str)
+            return 1.0 <= grade_float <= 5.0
+        except ValueError:
+            # Check if it's a letter grade or status
+            grade_upper = grade_str.upper().strip()
+            valid_grades = ['A', 'B', 'C', 'D', 'F', 'P', 'INC', 'DRP', 'PASSED', 'FAILED']
+            return any(valid in grade_upper for valid in valid_grades)
+
+    def get_default_grades_value(self, field):
+        """Get default values for missing grade fields"""
+        defaults = {
+            'subject_code': 'N/A',
+            'subject_description': 'Unknown Subject',
+            'units': '3',
+            'equivalent': 'N/A',
+            'remarks': 'N/A'
+        }
+        return defaults.get(field, 'N/A')
+
+    def check_student_exists_in_chromadb(self, student_number, student_name):
+        """Check if student exists in any student collection"""
+        print(f"🔍 Checking if student exists: {student_number} - {student_name}")
+        
+        student_collections = []
+        for collection_name in self.collections.keys():
+            if 'students' in collection_name.lower():
+                student_collections.append(collection_name)
+        
+        if not student_collections:
+            print("❌ No student collections found in ChromaDB")
+            return False, None
+        
+        print(f"📋 Checking {len(student_collections)} student collections")
+        
+        for collection_name in student_collections:
+            try:
+                collection = self.collections[collection_name]
+                all_docs = collection.get()
+                
+                for i, metadata in enumerate(all_docs["metadatas"]):
+                    existing_id = str(metadata.get('student_id', '')).strip().upper()
+                    existing_name = str(metadata.get('full_name', '')).strip().upper()
+                    
+                    # Check by student ID first (most reliable)
+                    if student_number and existing_id and student_number.upper() == existing_id:
+                        print(f"✅ Found student by ID: {existing_id} in {collection_name}")
+                        return True, collection_name
+                    
+                    # Check by name (fuzzy match)
+                    if student_name and existing_name and self.fuzzy_name_match(student_name, existing_name, threshold=0.8):
+                        print(f"✅ Found student by name: {existing_name} in {collection_name}")
+                        return True, collection_name
+            
+            except Exception as e:
+                print(f"⚠️ Error checking collection {collection_name}: {e}")
+        
+        print(f"❌ Student not found in any collection")
+        return False, None
+
+    def process_student_grades_excel(self, filename):
+        """Process Student Grades Excel with existence validation"""
+        try:
+            grades_info = self.extract_student_grades_excel_info_smart(filename)
+            
+            if not grades_info or not grades_info.get('grades'):
+                print("❌ Could not extract student grades data from Excel")
+                return False
+            
+            student_info = grades_info['student_info']
+            student_number = student_info.get('student_number', '')
+            student_name = student_info.get('student_name', '')
+            
+            # Check if student exists in ChromaDB
+            exists, existing_collection = self.check_student_exists_in_chromadb(student_number, student_name)
+            
+            if not exists:
+                print(f"❌ Student not found in ChromaDB: {student_number} - {student_name}")
+                print(f"💡 Please ensure the student data is loaded before adding grades.")
+                return False
+            
+            print(f"✅ Student found in collection: {existing_collection}")
+            
+            # Format grades data
+            formatted_text = self.format_student_grades_enhanced(grades_info)
+            
+            # Create metadata
+            metadata = {
+                'student_number': student_number,
+                'student_name': student_name,
+                'course': student_info.get('course', 'Unknown'),
+                'gwa': student_info.get('gwa', 'N/A'),
+                'total_subjects': len(grades_info['grades']),
+                'data_type': 'student_grades_excel',
+                'department': self.detect_department_from_course(student_info.get('course', '')),
+                'existing_collection': existing_collection
+            }
+            
+            # Add grades to the existing student collection or create new grades collection
+            collection_name = f"{existing_collection}_grades"
+            
+            try:
+                # Try to get existing grades collection
+                collection = self.client.get_collection(
+                    name=collection_name,
+                    embedding_function=self.embedding_function
+                )
+            except:
+                # Create new grades collection
+                collection = self.client.create_collection(
+                    name=collection_name,
+                    embedding_function=self.embedding_function
+                )
+            
+            self.store_with_smart_metadata(collection, [formatted_text], [metadata])
+            self.collections[collection_name] = collection
+            
+            collection_type = self.get_collection_type(existing_collection)
+            print(f"✅ Loaded student grades into: {collection_name}")
+            print(f"   🎓 Student: {student_name} ({student_number})")
+            print(f"   📚 Subjects: {metadata['total_subjects']}, GWA: {metadata['gwa']}")
+            print(f"   🔗 Linked to: {collection_type}")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error processing student grades Excel: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+
+    def format_student_grades_enhanced(self, grades_info):
+        """Format student grades data for storage"""
+        
+        student_info = grades_info['student_info']
+        grades = grades_info['grades']
+        
+        text = f"""STUDENT ACADEMIC RECORD
+
+    STUDENT INFORMATION:
+    Student Number: {student_info.get('student_number', 'N/A')}
+    Student Name: {student_info.get('student_name', 'N/A')}
+    Course: {student_info.get('course', 'N/A')}
+    General Weighted Average (GWA): {student_info.get('gwa', 'N/A')}
+    Total Subjects: {len(grades)}
+
+    ACADEMIC GRADES:
+    """
+        
+        if grades:
+            for i, grade in enumerate(grades, 1):
+                text += f"""
+    Subject {i}:
+    • Subject Code: {grade.get('subject_code', 'N/A')}
+    • Subject Description: {grade.get('subject_description', 'N/A')}
+    • Units: {grade.get('units', 'N/A')}
+    • Grade: {grade.get('equivalent', 'N/A')}
+    • Remarks: {grade.get('remarks', 'N/A')}
+    """
+            
+            # Summary
+            total_units = sum(float(grade.get('units', '3')) for grade in grades if grade.get('units', '3').replace('.', '').isdigit())
+            passed_subjects = len([g for g in grades if g.get('remarks', '').upper() in ['PASSED', 'P']])
+            
+            text += f"""
+    ACADEMIC SUMMARY:
+    • Total Subjects Enrolled: {len(grades)}
+    • Total Units: {total_units}
+    • Passed Subjects: {passed_subjects}
+    • Failed Subjects: {len(grades) - passed_subjects}
+    """
+        else:
+            text += "\nNo grade records found."
+        
+        return text.strip()
+    
+    # ======================== UNIVERSAL DATA EXTRACTION PDF========================
+    
+    def process_student_pdf_universal(self, filename):
+        """
+        Universal student PDF processing that works with ANY PDF format
+        This is the main entry point for PDF student data extraction
+        """
+        try:
+            print(f"📄 Processing Student PDF: {filename}")
+            
+            # Extract all text from PDF
+            full_text = self.extract_full_pdf_text(filename)
+            if not full_text:
+                print("❌ Could not extract text from PDF")
+                return False
+            
+            print(f"📄 Extracted {len(full_text)} characters from PDF")
+            
+            # Try different extraction strategies
+            student_records = self.extract_student_records_from_pdf(full_text, filename)
+            
+            if not student_records:
+                print("❌ No valid student records found in PDF")
+                return False
+            
+            print(f"📊 Found {len(student_records)} student record(s)")
+            
+            # Process each student record
+            texts = []
+            metadata_list = []
+            
+            for i, record in enumerate(student_records, 1):
+                print(f"\n🔍 Processing student record {i}:")
+                
+                # Extract student data using universal extraction
+                student_data = self.extract_universal_student_data_pdf(record, 'pdf')
+                
+                # Validate that we have essential data
+                if self.is_valid_student_record(student_data):
+                    formatted_text = self.format_student_data_pdf(student_data)
+                    metadata = self.create_student_metadata_pdf(student_data)
+                    
+                    texts.append(formatted_text)
+                    metadata_list.append(metadata)
+                    
+                    # Debug output
+                    print(f"   ✅ Valid record: {student_data.get('full_name', 'Unknown')} ({student_data.get('student_id', 'No ID')})")
+                else:
+                    print(f"   ❌ Invalid record - missing essential data")
+            
+            # Store using the smart hierarchy system (same as Excel)
+            if texts:
+                print(f"\n📊 Storing {len(texts)} valid student records...")
+                success = self.system.store_with_smart_hierarchy(texts, metadata_list, 'students')
+                if success:
+                    print(f"✅ Successfully processed {len(texts)} student records from PDF")
+                    return True
+            
+            print("❌ No valid student data to store")
+            return False
+            
+        except Exception as e:
+            print(f"❌ Error processing student PDF: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+        
+    def extract_full_pdf_text(self, filename):
+        """Extract all text from PDF file"""
+        try:
+            doc = fitz.open(filename)
+            full_text = ""
+            
+            for page_num in range(len(doc)):
+                page = doc[page_num]
+                page_text = page.get_text()
+                
+                # Add page separator for multi-page PDFs
+                if page_num > 0:
+                    full_text += f"\n\n--- PAGE {page_num + 1} ---\n\n"
+                
+                full_text += page_text
+            
+            doc.close()
+            return full_text.strip()
+            
+        except Exception as e:
+            print(f"❌ Error extracting PDF text: {e}")
+            return None
+        
+    def extract_student_records_from_pdf(self, full_text, filename):
+        """
+        Extract individual student records from PDF text
+        Uses multiple strategies to handle different PDF formats
+        """
+        print(f"🔍 Analyzing PDF structure...")
+        
+        # Strategy 1: Try structured record separation
+        records = self.split_pdf_into_student_records(full_text)
+        if records and len(records) > 1:
+            print(f"📋 Strategy 1: Found {len(records)} structured records")
+            return records
+        
+        # Strategy 2: Try table-based extraction
+        table_records = self.extract_from_pdf_tables(full_text)
+        if table_records:
+            print(f"📋 Strategy 2: Found {len(table_records)} table-based records")
+            return table_records
+        
+        # Strategy 3: Try form-based extraction
+        form_records = self.extract_from_pdf_forms(full_text)
+        if form_records:
+            print(f"📋 Strategy 3: Found {len(form_records)} form-based records")
+            return form_records
+        
+        # Strategy 4: Treat entire PDF as single record
+        print(f"📋 Strategy 4: Treating entire PDF as single student record")
+        return [full_text]
+    
+    def split_pdf_into_student_records(self, text):
+        """
+        Split PDF text into individual student records using multiple delimiters
+        Enhanced version of the existing split_into_student_records method
+        """
+        # Enhanced delimiter patterns for PDF
+        delimiter_patterns = [
+            r'(?:STUDENT\s*(?:ID|NUMBER|NO))\s*[:\-]?\s*([A-Z0-9-]+)',  # "STUDENT ID: PDM-123456"
+            r'([A-Z]{2,4}-\d{4,6})',  # Pattern like PDM-123456, BSCS-2023
+            r'(\d{4,8})',  # Pure numbers, e.g., 20230001
+            r'(?:NAME|STUDENT\s*NAME)\s*[:\-]?\s*([A-Z][A-Za-z\s\.,-]+)',  # "NAME: JOHN DOE"
+            r'^\s*([A-Z][a-z]+(?:[\s,\.]+[A-Z][a-z]+){1,})\s*$',  # Full name on its own line
+            r'^\s*STUDENT\s*(?:INFORMATION|RECORD|PROFILE)\s*$',  # Section headers
+            r'^\s*(?:PAGE|FORM)\s*\d+\s*(?:OF\s*\d+)?\s*$',  # Page indicators
+            r'^\s*-{3,}\s*\d+\s*-{3,}\s*$',  # Page number in dashes
+            r'^\s*(?:ENROLLMENT|REGISTRATION)\s*(?:FORM|RECORD)\s*$',  # Forms
+        ]
+        
+        all_lines = [line.strip() for line in text.split('\n') if line.strip()]
+        records = []
+        
+        # Collect all potential starting points
+        potential_starts = []
+        for i, line in enumerate(all_lines):
+            for pattern in delimiter_patterns:
+                if re.search(pattern, line, re.IGNORECASE | re.MULTILINE):
+                    potential_starts.append(i)
+                    break
+        
+        # Remove duplicates and sort
+        potential_starts = sorted(list(set(potential_starts)))
+        
+        if not potential_starts:
+            print("📋 No clear delimiters found, treating as single record")
+            return [text.strip()] if text.strip() else []
+        
+        # Create records based on starting points
+        for i, start_idx in enumerate(potential_starts):
+            end_idx = len(all_lines)
+            if i + 1 < len(potential_starts):
+                end_idx = potential_starts[i + 1]
+            
+            # Capture record content
+            record_lines = all_lines[start_idx:end_idx]
+            record_content = '\n'.join(record_lines).strip()
+            
+            # Validate record content
+            if self.is_valid_pdf_student_record_content(record_content):
+                records.append(record_content)
+        
+        return records if records else [text.strip()] if text.strip() else []
+    
+    def extract_from_pdf_tables(self, text):
+        """Extract student data from table-like structures in PDF"""
+        lines = [line.strip() for line in text.split('\n') if line.strip()]
+        
+        # Look for table headers
+        table_headers = ['STUDENT ID', 'NAME', 'COURSE', 'YEAR', 'SECTION', 'CONTACT']
+        header_row = -1
+        
+        for i, line in enumerate(lines):
+            line_upper = line.upper()
+            header_count = sum(1 for header in table_headers if header in line_upper)
+            if header_count >= 4:  # Found table header
+                header_row = i
+                break
+        
+        if header_row == -1:
+            return []
+        
+        # Extract table data
+        table_records = []
+        for i in range(header_row + 1, len(lines)):
+            line = lines[i]
+            
+            # Stop at empty lines or footer
+            if not line or any(keyword in line.upper() for keyword in ['TOTAL', 'END', 'PAGE']):
+                break
+            
+            # Check if line contains student data patterns
+            if (re.search(r'[A-Z]{2,4}-\d{4,6}|\d{4,8}', line) or  # Student ID pattern
+                re.search(r'[A-Z][a-z]+(?:\s[A-Z][a-z]+)+', line)):  # Name pattern
+                table_records.append(line)
+        
+        return table_records
+    
+    def extract_from_pdf_forms(self, text):
+        """Extract student data from form-like structures in PDF"""
+        # Look for form sections
+        form_sections = []
+        current_section = []
+        
+        lines = [line.strip() for line in text.split('\n') if line.strip()]
+        
+        for line in lines:
+            # Check for form boundaries
+            if any(keyword in line.upper() for keyword in [
+                'STUDENT INFORMATION', 'ENROLLMENT FORM', 'REGISTRATION',
+                'STUDENT RECORD', 'STUDENT PROFILE'
+            ]):
+                if current_section:
+                    form_sections.append('\n'.join(current_section))
+                current_section = [line]
+            elif any(keyword in line.upper() for keyword in ['END OF FORM', 'SIGNATURE', 'DATE SIGNED']):
+                if current_section:
+                    current_section.append(line)
+                    form_sections.append('\n'.join(current_section))
+                    current_section = []
+            else:
+                if current_section:
+                    current_section.append(line)
+        
+        # Add the last section if any
+        if current_section:
+            form_sections.append('\n'.join(current_section))
+        
+        return form_sections if form_sections else []
+    
+    def is_valid_pdf_student_record_content(self, content):
+        """Check if content is a valid student record"""
+        if len(content) < 50:  # Too short
+            return False
+        
+        content_upper = content.upper()
+        
+        # Must contain at least 2 student-related indicators
+        indicators = [
+            'STUDENT', 'NAME', 'COURSE', 'YEAR', 'SECTION', 'CONTACT',
+            'ID', 'GUARDIAN', 'PHONE', 'MOBILE'
+        ]
+        
+        indicator_count = sum(1 for indicator in indicators if indicator in content_upper)
+        
+        # Must have either an ID pattern or a name pattern
+        has_id = bool(re.search(r'[A-Z]{2,4}-\d{4,6}|\d{4,8}', content))
+        has_name = bool(re.search(r'[A-Z][a-z]+(?:\s[A-Z][a-z]+)+', content))
+        
+        return indicator_count >= 2 and (has_id or has_name)
+    
+    def extract_universal_student_data_pdf(self, text_content, source_type):
+        """Enhanced PDF student data extraction with better guardian handling"""
+        lines = [line.strip() for line in text_content.split('\n') if line.strip()]
+        all_text = ' '.join(lines).upper()
+        
+        # Initialize student data
+        student_data = {
+            'student_id': None,
+            'surname': None,
+            'first_name': None,
+            'full_name': None,
+            'year': None,
+            'course': None,
+            'section': None,
+            'contact_number': None,
+            'guardian_name': None,
+            'guardian_contact': None
+        }
+        
+        # Enhanced patterns for PDF extraction
+        patterns = {
+            'student_id': [
+                r'(?:STUDENT\s*(?:ID|NUMBER|NO))\s*[:\-]?\s*([A-Z0-9-]+)',
+                r'(?:ID\s*(?:NO|NUMBER))\s*[:\-]?\s*([A-Z0-9-]+)',
+                r'([A-Z]{2,4}-\d{4,6}-?\d*)',
+                r'(\d{4,8})',
+            ],
+            'full_name': [
+                r'(?:FULL\s*NAME|STUDENT\s*NAME|NAME)\s*[:\-]?\s*([A-Z][A-Za-z\s\.,-]+)',
+                r'(?:LASTNAME,\s*FIRSTNAME)\s*[:\-]?\s*([A-Z][A-Za-z\s\.,-]+)',
+                r'([A-Z][A-Za-z\s\.,-]+(?:,\s*[A-Z][A-Za-z\s\.,-]+)?)\s*(?:STUDENT|ID|YEAR|COURSE)',
+            ],
+            'year': [
+                r'(?:YEAR\s*LEVEL|YEAR)\s*[:\-]?\s*([1-4])',
+                r'([1-4])(?:ST|ND|RD|TH)?\s*YEAR',
+                r'(?:LEVEL|GRADE)\s*[:\-]?\s*([1-4])',
+            ],
+            'course': [
+                r'(?:COURSE|PROGRAM|DEGREE)\s*[:\-]?\s*([A-Z]{2,6})',
+                r'(BS[A-Z]{2,4}|AB[A-Z]*|B[A-Z]{2,4})',
+                r'\b(BSCS|BSIT|BSHM|BSTM|BSOA|BECED|BTLE)\b',
+            ],
+            'section': [
+                r'(?:SECTION|SEC)\s*[:\-]?\s*([A-Z0-9-]+)',
+                r'\b(SEC\s*[A-Z0-9]+)\b',
+            ],
+            'contact_number': [
+                r'(?:CONTACT\s*(?:NUMBER|NO)|PHONE|MOBILE|TEL)\s*[:\-]?\s*(09\d{9})',
+                r'\b(09\d{9})\b',
+            ],
+            'guardian_name': [
+                r'(?:GUARDIAN\s*NAME|PARENT\s*NAME|EMERGENCY\s*CONTACT\s*NAME)\s*[:\-]?\s*([A-Z][A-Za-z\s\.,-]+?)(?:\s*09\d{9}|\s*$)',
+                r'(?:GUARDIAN|PARENT)\s*[:\-]?\s*([A-Z][A-Za-z\s\.,-]+?)(?:\s*09\d{9}|\s*$)',
+            ],
+            'guardian_contact': [
+                r'(?:GUARDIAN\s*(?:CONTACT|PHONE|MOBILE)|PARENT\s*(?:CONTACT|PHONE|MOBILE))\s*[:\-]?\s*(09\d{9})',
+                r'(?:EMERGENCY\s*(?:CONTACT|PHONE|MOBILE))\s*[:\-]?\s*(09\d{9})',
+                r'(?:GUARDIAN\s*NAME|PARENT\s*NAME)\s*[:\-]?\s*[A-Za-z\s\.,-]*\s*(09\d{9})',
+            ]
+        }
+        
+        # Extract each field using patterns
+        for field, field_patterns in patterns.items():
+            if student_data[field] is not None:
+                continue
+            
+            for pattern in field_patterns:
+                matches = re.findall(pattern, all_text, re.IGNORECASE | re.MULTILINE)
+                if matches:
+                    extracted_value = matches[0]
+                    if isinstance(extracted_value, tuple):
+                        extracted_value = next((v for v in reversed(extracted_value) if v), '')
+                    
+                    cleaned_value = self.clean_pdf_extracted_value(extracted_value.strip(), field)
+                    if cleaned_value:
+                        student_data[field] = cleaned_value
+                        print(f"   🎯 Found {field}: {cleaned_value}")
+                        break
+            
+            # Fallback: fuzzy line-by-line search
+            if not student_data[field]:
+                fuzzy_value = self.fuzzy_field_extraction_pdf(lines, field)
+                if fuzzy_value:
+                    student_data[field] = fuzzy_value
+                    print(f"   🔍 Fuzzy found {field}: {fuzzy_value}")
+        
+        # Post-process name splitting
+        if student_data['full_name'] and not (student_data['surname'] and student_data['first_name']):
+            student_data['surname'], student_data['first_name'] = self.split_full_name_pdf(student_data['full_name'])
+        elif student_data['surname'] and student_data['first_name'] and not student_data['full_name']:
+            student_data['full_name'] = f"{student_data['surname']}, {student_data['first_name']}"
+        
+        # Ensure all fields are strings
+        for key, value in student_data.items():
+            if value is None:
+                student_data[key] = ''
+            elif not isinstance(value, str):
+                student_data[key] = str(value)
+        
+        return student_data
+    
+    def clean_pdf_extracted_value(self, value, field_type):
+        """Clean extracted values from PDF (enhanced version)"""
+        if not value or len(value.strip()) == 0:
+            return None
+        
+        value = value.strip()
+        
+        # Filter out PDF-specific noise
+        pdf_noise = [
+            'PDF', 'PAGE', 'FORM', 'DOCUMENT', 'FILE', 'PRINT', 'SCAN',
+            'HEADER', 'FOOTER', 'WATERMARK', 'CONFIDENTIAL'
+        ]
+        
+        if value.upper() in pdf_noise:
+            return None
+        
+        # Use the same cleaning logic as Excel but with PDF-specific enhancements
+        if field_type == 'student_id':
+            cleaned = re.sub(r'[^A-Z0-9-]', '', value.upper())
+            # PDF might have extra spaces or formatting
+            cleaned = re.sub(r'-{2,}', '-', cleaned)  # Multiple dashes to single
+            return cleaned if len(cleaned) >= 3 else None
+        
+        elif field_type in ['contact_number', 'guardian_contact']:
+            cleaned = re.sub(r'[^\d\+]', '', value)
+            # Handle common PDF phone formats
+            if cleaned.startswith('63') and len(cleaned) == 12:
+                cleaned = '+' + cleaned
+            elif cleaned.startswith('09') and len(cleaned) == 11:
+                pass  # Keep as is
+            elif len(cleaned) == 10 and cleaned.startswith('9'):
+                cleaned = '0' + cleaned  # Add leading 0
+            
+            return cleaned if 10 <= len(cleaned) <= 15 else None
+        
+        elif field_type in ['full_name', 'guardian_name', 'surname', 'first_name']:
+            # Enhanced name cleaning for PDF
+            cleaned = re.sub(r'[^A-Za-z\s\.,-]', '', value)
+            cleaned = re.sub(r'\s{2,}', ' ', cleaned)  # Multiple spaces to single
+            cleaned = cleaned.title().strip()
+            
+            # Remove common PDF artifacts
+            pdf_name_noise = ['Student', 'Name', 'Guardian', 'Parent', 'Contact']
+            words = cleaned.split()
+            cleaned_words = [word for word in words if word not in pdf_name_noise]
+            cleaned = ' '.join(cleaned_words)
+            
+            return cleaned if len(cleaned) > 1 else None
+        
+        elif field_type == 'year':
+            year_match = re.search(r'([1-4])', value)
+            return year_match.group(1) if year_match else None
+        
+        elif field_type in ['course', 'section']:
+            cleaned = re.sub(r'[^A-Z0-9]', '', value.upper())
+            return cleaned if len(cleaned) >= 1 else None
+        
+        return value
+    
+    def fuzzy_field_extraction_pdf(self, lines, field_type):
+        """Enhanced fuzzy extraction for PDF content"""
+        field_keywords = {
+            'student_id': ['id', 'student no', 'student number', 'control no', 'registration no'],
+            'full_name': ['name', 'student name', 'full name', 'complete name'],
+            'surname': ['surname', 'last name', 'family name', 'lastname'],
+            'first_name': ['first name', 'given name', 'firstname'],
+            'year': ['year', 'year level', 'level', 'grade', 'yr level'],
+            'course': ['course', 'program', 'degree', 'major'],
+            'section': ['section', 'sec', 'class', 'block'],
+            'contact_number': ['contact', 'phone', 'mobile', 'tel no', 'cell no'],
+            'guardian_name': ['guardian', 'parent', 'emergency contact', 'father', 'mother'],
+            'guardian_contact': ['guardian contact', 'parent contact', 'emergency no']
+        }
+        
+        keywords = field_keywords.get(field_type, [])
+        
+        for line_idx, line in enumerate(lines):
+            line_upper = line.upper()
+            for keyword in keywords:
+                if keyword.upper() in line_upper:
+                    # Extract value from same line
+                    value = self.extract_value_from_pdf_line(line, keyword)
+                    if value:
+                        cleaned = self.clean_pdf_extracted_value(value, field_type)
+                        if cleaned:
+                            return cleaned
+                    
+                    # Look in next few lines
+                    for offset in range(1, 4):
+                        if line_idx + offset < len(lines):
+                            next_line = lines[line_idx + offset].strip()
+                            if next_line:
+                                cleaned = self.clean_pdf_extracted_value(next_line, field_type)
+                                if cleaned:
+                                    return cleaned
+        
+        return None
+    
+    def extract_value_from_pdf_line(self, line, keyword):
+        """Extract value from a line containing a keyword"""
+        line_upper = line.upper()
+        keyword_upper = keyword.upper()
+        
+        if keyword_upper in line_upper:
+            # Try different separators
+            for separator in [':', '=', '-', '\t']:
+                if separator in line:
+                    parts = line.split(separator, 1)
+                    if len(parts) > 1:
+                        value = parts[1].strip()
+                        if value and len(value) > 1:
+                            return value
+            
+            # Try extracting after keyword
+            keyword_pos = line_upper.find(keyword_upper)
+            if keyword_pos >= 0:
+                after_keyword = line[keyword_pos + len(keyword):].strip()
+                if after_keyword and len(after_keyword) > 1:
+                    return after_keyword
+        
+        return None
+    
+    def split_full_name_pdf(self, full_name):
+        """Split full name for PDF (same logic as Excel)"""
+        if not full_name:
+            return None, None
+        
+        full_name = full_name.strip()
+        
+        # Case 1: "Surname, First Name Middle Name"
+        if ',' in full_name:
+            parts = full_name.split(',', 1)
+            surname = parts[0].strip()
+            first_name_parts = parts[1].strip().split()
+            first_name = first_name_parts[0] if first_name_parts else None
+            return surname, first_name
+        
+        # Case 2: "First Name Middle Name Surname"
+        name_parts = full_name.split()
+        if len(name_parts) >= 2:
+            surname = name_parts[-1]
+            first_name = ' '.join(name_parts[:-1])
+            return surname, first_name
+        elif len(name_parts) == 1:
+            return name_parts[0], None
+        
+        return None, None
+    
+    def is_valid_student_record(self, student_data):
+        """Check if extracted student data is valid"""
+        # Must have at least student_id OR full_name
+        has_id = student_data.get('student_id') and student_data['student_id'].strip()
+        has_name = student_data.get('full_name') and student_data['full_name'].strip()
+        
+        if not (has_id or has_name):
+            return False
+        
+        # Additional validation for quality
+        non_empty_fields = sum(1 for value in student_data.values() if value and value.strip())
+        
+        # Should have at least 3 non-empty fields for a valid record
+        return non_empty_fields >= 3
+    
+    def format_student_data_pdf(self, student_data):
+        """Format PDF student data (same as Excel format)"""
+        return f"""
+Student ID: {student_data.get('student_id', 'N/A')}
+Full Name: {student_data.get('full_name', 'N/A')}
+Surname: {student_data.get('surname', 'N/A')}
+First Name: {student_data.get('first_name', 'N/A')}
+Year: {student_data.get('year', 'N/A')}
+Course: {student_data.get('course', 'N/A')}
+Section: {student_data.get('section', 'N/A')}
+Contact Number: {student_data.get('contact_number', 'N/A')}
+Guardian Name: {student_data.get('guardian_name', 'N/A')}
+Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
+""".strip()
+    
+    def create_student_metadata_pdf(self, student_data):
+        """Create metadata for PDF student data with enhanced error handling"""
+        try:
+            # Ensure all required keys exist
+            required_keys = ['student_id', 'full_name', 'surname', 'first_name', 'year', 'course', 'section']
+            for key in required_keys:
+                if key not in student_data:
+                    student_data[key] = ''
+            
+            metadata = {
+                'course': str(student_data.get('course', '')),
+                'section': str(student_data.get('section', '')),
+                'year_level': str(student_data.get('year', '')),
+                'student_id': str(student_data.get('student_id', '')),
+                'full_name': str(student_data.get('full_name', '')),
+                'surname': str(student_data.get('surname', '')),
+                'first_name': str(student_data.get('first_name', '')),
+                'data_type': 'student_pdf',
+                'department': str(self.detect_department_from_course(student_data.get('course', '')) or '')
+            }
+            
+            # Convert year_level to int if valid
+            try:
+                if metadata['year_level'].isdigit():
+                    metadata['year_level'] = int(metadata['year_level'])
+                elif not metadata['year_level']:
+                    metadata['year_level'] = 0
+            except (ValueError, AttributeError):
+                metadata['year_level'] = 0
+            
+            return metadata
+            
+        except Exception as e:
+            print(f"❌ Error creating PDF metadata: {e}")
+            # Return safe default metadata
+            return {
+                'course': '',
+                'section': '',
+                'year_level': 0,
+                'student_id': '',
+                'full_name': '',
+                'surname': '',
+                'first_name': '',
+                'data_type': 'student_pdf',
+                'department': ''
+            }
+    
+    # ======================== UNIVERSAL DATA EXTRACTION EXCEL========================
     
     def extract_universal_student_data(self, text_content, source_type):
         """
-        Universal extractor for student data regardless of format.
-        This function attempts to find the specified fields using flexible patterns.
+        ENHANCED Universal extractor - better handling for formatted table data
         """
         lines = [line.strip() for line in text_content.split('\n') if line.strip()]
-        all_text = ' '.join(lines).upper() # Flatten text for broader pattern matching
+        all_text = ' '.join(lines).upper() 
         
         # Initialize required fields with None
         student_data = {
@@ -678,128 +1470,354 @@ class SmartStudentDataSystem:
             'guardian_contact': None
         }
         
+        print(f"🔍 Processing record: {text_content[:200]}...")
+        
+        # For structured table data (like your PDF), try direct line matching first
+        if self.is_formatted_table_data(text_content):
+            print("   📋 Using table data extraction")
+            extracted_data = self.extract_from_formatted_table(lines)
+            for key, value in extracted_data.items():
+                if value:
+                    student_data[key] = value
+        
         # For structured Excel, extract directly from column headers
         if source_type == 'excel_structured':
             extracted_from_structured = self.extract_from_structured_text(lines)
             for key, value in extracted_from_structured.items():
                 if value:
                     student_data[key] = value
-        
-        # Define flexible patterns for unstructured data (PDFs, unstructured Excel)
-        # Prioritize more specific patterns first
-        patterns = {
-            'student_id': [
-                r'(?:STUDENT\s*ID|ID\s*NO|ID|STUDENT\s*NUMBER)[:\s]*([A-Z0-9-]+)', # "STUDENT ID: PDM-123456"
-                r'([A-Z]{2,4}-\d{4,6})',  # Pattern like PDM-123456, BSCS-2023
-                r'(\d{4,8})',  # Pure numbers, e.g., 20230001
-                r'^\s*(\d{4,8})\s*$', # NEW: ID on its own line (pure numbers)
-            ],
-            'full_name': [ # Try to get full name first, then split
-                r'(?:FULL\s*NAME|STUDENT\s*NAME|NAME)[:\s]*([A-Z][A-Z\s\.,-]+)', # "NAME: JOHN DOE"
-                r'([A-Z][A-Z\s\.,-]+(?:,\s*[A-Z][A-Z\s\.,-]+)?)\s*(?:STUDENT ID|ID NO|YEAR|COURSE|SECTION|CONTACT)', # Name before another field
-                r'([A-Z][A-Z\s\.,-]+)\s*\d{4,8}', # Name followed by a number (potential ID)
-                r'^\s*([A-Z][A-Z\s\.,-]+(?:,\s*[A-Z][A-Z\s\.,-]+)?)\s*$', # NEW: Full name on its own line (e.g., "DOE, JOHN")
-                r'^\s*([A-Z][a-z]+(?:\s[A-Z][a-z]+){1,2})\s*$', # NEW: First Last or First Middle Last on its own line (e.g., "John Doe", "Mary Jane Smith")
-            ],
-            'year': [
-                r'(?:YEAR\s*LEVEL|YEAR)[:\s]*([1-4])', # "YEAR: 2"
-                r'([1-4])(?:ST|ND|RD|TH)?\s*YEAR', # "2ND YEAR"
-                r'YEAR\s*(\d)', # "YEAR 2"
-                r'\b(YEAR\s*[1-4])\b', # NEW: "YEAR 1", "YEAR 2" as a whole word
-                r'\b([1-4])(?:ST|ND|RD|TH)\b', # NEW: Directly capture "1ST", "2ND" etc.
-                r'\b([1-4])\s*(?:YR|YEAR)\b', # NEW: "1 YR", "2 YEAR"
-                r'\bLEVEL\s*([1-4])\b', # NEW: "LEVEL 1"
-                r'\b([1-4])\s*(?:LEVEL)\b', # NEW: "1 LEVEL"
-            ],
-            'course': [
-                r'(?:COURSE|PROGRAM)[:\s]*([A-Z]{2,6})', # "COURSE: BSCS"
-                r'(BS[A-Z]{2,4}|AB[A-Z]*|B[A-Z]{2,4})', # BSCS, ABPSY, BSTM
-                r'\b(BSCS|BSIT|BSHM|BSTM|BSOA|BECED|BTLE)\b', # NEW: Specific common courses as whole words
-                r'\b([A-Z]{2,6})\b(?=\s*(?:YEAR|SECTION|STUDENT ID|LEVEL))', # NEW: Course code followed by other student info indicators
-                r'(?:BACHELOR\s*OF\s*SCIENCE\s*IN|BS\s*IN)\s*([A-Z\s]+)', # NEW: "Bachelor of Science in Computer Science"
-                r'\b(?:PROGRAM|DEGREE)[:\s]*([A-Z\s]+)\b', # NEW: "PROGRAM: Computer Science"
-                r'\b([A-Z]{2,6})\s*(?:PROGRAM|COURSE)\b', # NEW: "BSCS PROGRAM"
-            ],
-            'section': [
-                r'(?:SECTION|SEC)[:\s]*([A-Z0-9-]+)', # "SECTION: A"
-                r'SECTION\s+([A-Z0-9-]+)', # "SECTION A"
-                r'\b(SEC\s*[A-Z0-9]+)\b', # NEW: "SEC A", "SEC B1"
-                r'\b([A-Z])\b(?=\s*(?:YEAR|COURSE|STUDENT ID|LEVEL))', # NEW: Single letter section followed by other student info
-                r'\b(SECTION\s*[A-Z0-9]+)\b', # NEW: "SECTION 1A"
-                r'\b[A-Z]\s*(?:SECTION)\b', # NEW: "A SECTION"
-                r'\b([A-Z0-9]+)\s*(?:SEC|SECTION)\b', # NEW: "1A SEC"
-            ],
-            'contact_number': [
-                r'(?:CONTACT\s*NUMBER|PHONE|MOBILE|TEL|CONTACT)[:\s]*([\+\d\s()-]+)', # "CONTACT NUMBER: +639123456789"
-                r'(\d{10,12})', # Pure 10-12 digit numbers (e.g., 9123456789)
-                r'(\+\d{10,14})', # NEW: +639... format
-                r'\b(?:PHONE|TEL)[:\s]*([\+\d\s()-]+)\b', # NEW: "PHONE: 123-456-7890"
-                r'\bCELL\s*NO[:\s]*([\+\d\s()-]+)\b', # NEW: "CELL NO: 9123..."
-            ],
-            'guardian_name': [
-                r'(?:GUARDIAN\s*NAME|PARENT\s*NAME|EMERGENCY\s*CONTACT\s*NAME)[:\s]*([A-Z][A-Z\s\.,-]+)',
-                r'GUARDIAN[:\s]*([A-Z][A-Z\s\.,-]+)',
-                r'(?:GUARDIAN|PARENT)\s*:\s*([A-Z][A-Z\s\.,-]+)', # NEW: "GUARDIAN: John Doe"
-                r'\b(?:EMERGENCY\s*CONTACT)[:\s]*([A-Z][A-Z\s\.,-]+)\b', # NEW: "EMERGENCY CONTACT: Jane Doe"
-            ],
-            'guardian_contact': [
-                r'(?:GUARDIAN\s*CONTACT|PARENT\s*CONTACT|EMERGENCY\s*CONTACT\s*NUMBER)[:\s]*([\+\d\s()-]+)',
-                r'(\d{10,12})\s*(?:GUARDIAN|PARENT)', # Number followed by guardian/parent keyword
-                r'(?:GUARDIAN|PARENT)\s*CONTACT[:\s]*([\+\d\s()-]+)', # NEW: "GUARDIAN CONTACT: 9123..."
-                r'\b(?:EMERGENCY\s*CONTACT\s*NO)[:\s]*([\+\d\s()-]+)\b', # NEW: "EMERGENCY CONTACT NO: 9123..."
-            ]
-        }
-        
-        # Extract each field using patterns
-        for field, field_patterns in patterns.items():
-            if student_data[field] is not None: # Skip if already found by structured excel path
-                continue
 
-            for pattern in field_patterns:
-                # Use re.IGNORECASE for all findall calls to be robust
-                matches = re.findall(pattern, all_text, re.IGNORECASE) 
-                if matches:
-                    extracted_raw_value = matches[0]
-                    # Determine the actual string value from the match result
-                    if isinstance(extracted_raw_value, tuple):
-                        # If it's a tuple, iterate from the end to find the first non-empty string
-                        value_to_clean = next((v for v in reversed(extracted_raw_value) if v), '')
-                    else:
-                        value_to_clean = extracted_raw_value
-                    
-                    cleaned_value = self.clean_extracted_value(value_to_clean.strip(), field) # Strip here
-                    if cleaned_value: # Only assign if cleaned value is not None
-                        student_data[field] = cleaned_value
-                        break
+        # If we didn't get good data from table extraction, try pattern matching
+        if not any(student_data.values()):
+            print("   🔍 Falling back to pattern matching")
             
-            # If not found by regex, try fuzzy matching in lines
-            if not student_data[field]:
-                fuzzy_value = self.fuzzy_field_extraction(lines, field)
-                if fuzzy_value: # Only assign if fuzzy value is not None
-                    student_data[field] = fuzzy_value
-        
-        # Post-process name splitting:
-        # If full_name was found, ensure surname and first_name are populated.
-        # If surname and first_name were found separately, combine for full_name.
+            # Enhanced patterns (same as before but better organized)
+            patterns = {
+                'student_id': [
+                    r'(?:STUDENT\s*(?:ID|NUMBER|NO))\s*[:\-]?\s*([A-Z0-9-]+)',
+                    r'\b([A-Z]{2,4}-\d{4,6}-?\d*)\b',  # PDM-2025-0001 pattern
+                    r'\b(\d{4,8})\b',
+                ],
+                'full_name': [
+                    r'(?:FULL\s*NAME|STUDENT\s*NAME|NAME)\s*[:\-]\s*([A-Z][A-Za-z\s\.,-]+?)(?:\s*(?:STUDENT|ID|YEAR|COURSE|SECTION|CONTACT|GUARDIAN|$))',
+                    r'^([A-Z][a-z]+\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s*$',
+                ],
+                'year': [
+                    r'(?:YEAR\s*LEVEL|YEAR)\s*[:\-]?\s*([1-4])',
+                    r'\b([1-4])(?:ST|ND|RD|TH)?\s*YEAR\b',
+                    r'\bYEAR\s*([1-4])\b',
+                ],
+                'course': [
+                    r'(?:COURSE|PROGRAM)\s*[:\-]?\s*(BS[A-Z]{2,4}|AB[A-Z]*|B[A-Z]{2,4})',
+                    r'\b(BSCS|BSIT|BSHM|BSTM|BSOA|BECED|BTLE)\b',
+                ],
+                'section': [
+                    r'(?:SECTION|SEC)\s*[:\-]?\s*([A-Z0-9]+)',
+                    r'\bSECTION\s*([A-Z0-9]+)\b',
+                ],
+                'contact_number': [
+                    r'\b(\+63\d{10}|09\d{9}|\d{11})\b',
+                    r'(?:CONTACT\s*(?:NUMBER|NO)|PHONE|MOBILE)\s*[:\-]?\s*(\d{10,11})',
+                ],
+                'guardian_name': [
+                    r'(?:GUARDIAN\s*NAME|PARENT\s*NAME)\s*[:\-]?\s*([A-Z][A-Za-z\s\.,-]+?)(?:\s*(?:CONTACT|PHONE|GUARDIAN|$))',
+                ],
+                'guardian_contact': [
+                    r'(?:GUARDIAN\s*(?:CONTACT|PHONE)|PARENT\s*(?:CONTACT|PHONE))\s*[:\-]?\s*(\d{10,11})',
+                ]
+            }
+
+            # Extract each field using patterns
+            for field, field_patterns in patterns.items():
+                if student_data[field] is not None:
+                    continue
+
+                for pattern in field_patterns:
+                    matches = re.findall(pattern, all_text, re.IGNORECASE | re.MULTILINE)
+                    if matches:
+                        extracted_raw_value = matches[0]
+                        if isinstance(extracted_raw_value, tuple):
+                            value_to_clean = next((v for v in reversed(extracted_raw_value) if v), '')
+                        else:
+                            value_to_clean = extracted_raw_value
+                        
+                        cleaned_value = self.clean_extracted_value(value_to_clean.strip(), field)
+                        if cleaned_value:
+                            student_data[field] = cleaned_value
+                            print(f"   🎯 Found {field}: {cleaned_value}")
+                            break
+
+        # Post-process name splitting
         if student_data['full_name'] and not (student_data['surname'] and student_data['first_name']):
             student_data['surname'], student_data['first_name'] = self.split_full_name(student_data['full_name'])
         elif student_data['surname'] and student_data['first_name'] and not student_data['full_name']:
             student_data['full_name'] = f"{student_data['surname']}, {student_data['first_name']}"
-        elif not student_data['full_name'] and not student_data['surname'] and not student_data['first_name']:
-            # Fallback: try to find a name-like string if no specific pattern matched
-            potential_name = re.search(r'([A-Z][a-z]+(?:\s[A-Z][a-z]+){1,2}(?:,\s*[A-Z][a-z]+)?)', text_content, re.IGNORECASE) # More robust name pattern
-            if potential_name:
-                student_data['full_name'] = self.clean_extracted_value(potential_name.group(0), 'full_name')
-                student_data['surname'], student_data['first_name'] = self.split_full_name(potential_name.group(0))
-        
-        # Ensure all fields are strings (or appropriate types) before returning, to prevent NoneType errors in metadata
+
+        # Ensure all fields are strings
         for key, value in student_data.items():
             if value is None:
-                student_data[key] = '' # Default to empty string for missing string fields
-            elif key == 'year' and not isinstance(value, (int, str)): # For year, ensure it's a string or int
+                student_data[key] = ''
+            elif key == 'year' and not isinstance(value, (int, str)):
                 student_data[key] = str(value) if value is not None else ''
 
         return student_data
+    
+    def is_formatted_table_data(self, text):
+        """Check if text is from formatted table extraction"""
+        lines = text.split('\n')
+        # Check if it follows our formatted structure
+        return (len(lines) >= 4 and 
+                any('Student ID:' in line for line in lines) and
+                any('Name:' in line for line in lines))
+
+    
+    def fuzzy_field_extraction_enhanced(self, lines, field_type):
+        """Enhanced fuzzy extraction with better field label filtering"""
+        field_keywords = {
+            'student_id': ['id', 'student no', 'student number', 'matric no', 's.i.d', 'std id', 'enrollment no'],
+            'full_name': ['name', 'student name', 'full name', 'student', 'examinee'],
+            'surname': ['surname', 'last name', 'family name'],
+            'first_name': ['first name', 'given name'],
+            'year': ['year', 'year level', 'level', 'yr', 'grade'],
+            'course': ['course', 'program', 'degree', 'major', 'strand'],
+            'section': ['section', 'sec', 'class', 'block'],
+            'contact_number': ['contact', 'phone', 'mobile', 'tel no', 'cell no', 'contact no'],
+            'guardian_name': ['guardian', 'parent', 'emergency contact name', 'mother', 'father'],
+            'guardian_contact': ['guardian contact', 'parent contact', 'emergency contact no', 'mother contact', 'father contact']
+        }
+        
+        keywords = field_keywords.get(field_type, [])
+        
+        for line_idx, line in enumerate(lines):
+            line_upper = line.upper()
+            for keyword in keywords:
+                if keyword.upper() in line_upper:
+                    # Try to extract value after colon, equals, or space
+                    value = None
+                    if ':' in line:
+                        parts = line.split(':', 1)
+                        if len(parts) > 1:
+                            value = parts[1].strip()
+                    elif '=' in line:
+                        parts = line.split('=', 1)
+                        if len(parts) > 1:
+                            value = parts[1].strip()
+                    else:
+                        # Extract after keyword
+                        parts = re.split(re.escape(keyword), line, 1, flags=re.IGNORECASE)
+                        if len(parts) > 1:
+                            value = parts[1].strip()
+                    
+                    # Enhanced validation of extracted value
+                    if value and len(value) > 1:
+                        cleaned_value = self.clean_extracted_value_enhanced(value, field_type)
+                        if cleaned_value:
+                            return cleaned_value
+                    
+                    # Look in next few lines with better validation
+                    for offset in range(1, 4):
+                        if line_idx + offset < len(lines):
+                            next_line = lines[line_idx + offset].strip()
+                            if next_line and len(next_line) > 1:
+                                cleaned_value = self.clean_extracted_value_enhanced(next_line, field_type)
+                                if cleaned_value:
+                                    return cleaned_value
+        return None
+    
+    def extract_actual_name_from_text(self, text):
+        """Extract actual student name while avoiding field labels"""
+        lines = [line.strip() for line in text.split('\n') if line.strip()]
+        
+        # Field labels to avoid
+        field_labels = [
+            'STUDENT ID', 'FULL NAME', 'SURNAME', 'FIRST NAME', 'YEAR', 'COURSE', 
+            'SECTION', 'CONTACT NUMBER', 'GUARDIAN NAME', 'GUARDIAN CONTACT',
+            'YEAR COURSE SECTION', 'CONTACT GUARDIAN', 'NAME GUARDIAN'
+        ]
+        
+        for line in lines:
+            line_clean = line.strip()
+            line_upper = line_clean.upper()
+            
+            # Skip lines that are field labels
+            if any(label in line_upper for label in field_labels):
+                continue
+                
+            # Look for name-like patterns
+            name_match = re.search(r'^([A-Z][a-z]+\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s*$', line_clean)
+            if name_match:
+                potential_name = name_match.group(1)
+                # Additional validation - must not contain field keywords
+                if not any(keyword in potential_name.upper() for keyword in ['STUDENT', 'YEAR', 'COURSE', 'SECTION', 'CONTACT', 'GUARDIAN']):
+                    return potential_name
+        
+        return None
+    
+    def extract_from_formatted_table(self, lines):
+        """Enhanced extraction with better guardian field mapping"""
+        data = {}
+        
+        for line in lines:
+            line = line.strip()
+            if ':' in line:
+                parts = line.split(':', 1)
+                if len(parts) == 2:
+                    field = parts[0].strip().lower().replace(' ', '_')
+                    value = parts[1].strip()
+                    
+                    if not value:  # Skip empty values
+                        continue
+                    
+                    # Map field names with validation
+                    field_mapping = {
+                        'student_id': 'student_id',
+                        'name': 'full_name',
+                        'year': 'year',
+                        'course': 'course', 
+                        'section': 'section',
+                        'contact_number': 'contact_number',
+                        'guardian_name': 'guardian_name',
+                        'guardian_contact': 'guardian_contact'
+                    }
+                    
+                    mapped_field = field_mapping.get(field)
+                    if mapped_field and value:
+                        # Clean the value based on field type
+                        if mapped_field == 'year':
+                            # Extract just the number from "1st Year"
+                            year_match = re.search(r'(\d+)', value)
+                            cleaned_value = year_match.group(1) if year_match else value
+                            data[mapped_field] = cleaned_value
+                            print(f"   🎯 Mapped {field} -> {mapped_field}: {cleaned_value}")
+                        
+                        elif mapped_field == 'full_name':
+                            # Clean name
+                            cleaned_name = re.sub(r'[^A-Za-z\s\.\-]', '', value).strip()
+                            if len(cleaned_name) > 1:
+                                data[mapped_field] = cleaned_name
+                                print(f"   🎯 Mapped {field} -> {mapped_field}: {cleaned_name}")
+                        
+                        elif mapped_field == 'course':
+                            # Clean course
+                            cleaned_course = value.upper().strip()
+                            # Validate against known courses
+                            known_courses = ['BSCS', 'BSIT', 'BSHM', 'BSTM', 'BSOA', 'BECED', 'BTLE']
+                            if cleaned_course in known_courses:
+                                data[mapped_field] = cleaned_course
+                                print(f"   🎯 Mapped {field} -> {mapped_field}: {cleaned_course}")
+                        
+                        elif mapped_field == 'section':
+                            # Clean section
+                            cleaned_section = re.sub(r'[^A-Z0-9]', '', value.upper())
+                            if len(cleaned_section) >= 1:
+                                data[mapped_field] = cleaned_section
+                                print(f"   🎯 Mapped {field} -> {mapped_field}: {cleaned_section}")
+                        
+                        elif mapped_field == 'contact_number':
+                            # Enhanced phone number cleaning
+                            cleaned_phone = re.sub(r'[^\d]', '', value)
+                            
+                            # Handle cases where contact has name appended
+                            if len(cleaned_phone) > 11:
+                                # Take first 11 digits
+                                cleaned_phone = cleaned_phone[:11]
+                            
+                            if 10 <= len(cleaned_phone) <= 11:
+                                data[mapped_field] = cleaned_phone
+                                print(f"   🎯 Mapped {field} -> {mapped_field}: {cleaned_phone}")
+                        
+                        elif mapped_field == 'guardian_contact':
+                            # Enhanced guardian contact cleaning
+                            # Extract phone number from the value
+                            phone_match = re.search(r'\b(09\d{9})\b', value)
+                            if phone_match:
+                                cleaned_contact = phone_match.group(1)
+                                data[mapped_field] = cleaned_contact
+                                print(f"   🎯 Mapped {field} -> {mapped_field}: {cleaned_contact}")
+                            elif re.match(r'^09\d{9}$', value.strip()):
+                                data[mapped_field] = value.strip()
+                                print(f"   🎯 Mapped {field} -> {mapped_field}: {value.strip()}")
+                        
+                        elif mapped_field == 'guardian_name':
+                            # Enhanced guardian name cleaning
+                            # Remove any phone numbers from the name
+                            cleaned_name = re.sub(r'\b09\d{9}\b', '', value).strip()
+                            cleaned_name = re.sub(r'[^A-Za-z\s\.\-]', '', cleaned_name).strip()
+                            cleaned_name = re.sub(r'\s+', ' ', cleaned_name).strip()
+                            
+                            if len(cleaned_name) > 1:
+                                data[mapped_field] = cleaned_name
+                                print(f"   🎯 Mapped {field} -> {mapped_field}: {cleaned_name}")
+                        
+                        else:
+                            # Default mapping
+                            data[mapped_field] = value
+                            print(f"   🎯 Mapped {field} -> {mapped_field}: {value}")
+        
+        return data
+    
+    def clean_extracted_value_enhanced(self, value, field_type):
+        """Enhanced cleaning that better filters out field labels"""
+        if not value:
+            return None
+        
+        value = value.strip()
+        
+        # Enhanced header values that might be picked up by mistake
+        header_values = [
+            'SURNAME', 'FIRST NAME', 'GUARDIAN NAME', 'CONTACT NUMBER', 'STUDENT ID', 
+            'YEAR', 'COURSE', 'SECTION', 'ID', 'NAME', 'PROGRAM', 'TEL', 'MOBILE', 
+            'PHONE', 'PARENT NAME', 'EMERGENCY CONTACT', 'DESCRIPTION', 'UNITS', 
+            'DAY', 'TIME', 'ROOM', 'ADVISER', 'LEVEL', 'NO', 'STUDENT', 'ADDRESS',
+            'COURSE CODE', 'SUBJECT', 'SCHEDULE', 'CLASS', 'INSTRUCTOR', 'ROOM NO',
+            'FULL NAME', 'YEAR COURSE SECTION', 'ST', 'BSCS', 'BSIT', 'BSHM', 'BSTM', 'BSOA', 'BECED', 'BTLE',
+            'COLLEGE', 'DEPARTMENT', 'ACADEMIC YEAR', 'SEMESTER', 'ENROLLMENT', 'REGISTRATION',
+            'PDM-', 'YEAR COURSE SECTION PDM-', 'STUDENT ID NAME YEAR COURSE SECTION',
+            # PDF-specific noise
+            'YEAR COURSE SECTION CONTACT NUMBER GUARDIAN NAME GUARDIAN',
+            'CONTACT NUMBER GUARDIAN NAME GUARDIAN',
+            'GUARDIAN NAME GUARDIAN'
+        ]
+        
+        if value.upper() in header_values:
+            print(f"   ❌ Filtered out header value: {value}")
+            return None
+        
+        # Field-specific enhanced cleaning
+        if field_type == 'student_id':
+            cleaned = re.sub(r'[^A-Z0-9-]', '', value.upper())
+            return cleaned if cleaned and len(cleaned) >= 3 else None
+        
+        elif field_type in ['contact_number', 'guardian_contact']:
+            cleaned = re.sub(r'[^\d\+]', '', value)
+            if 7 <= len(cleaned) <= 15: 
+                return cleaned
+            return None
+        
+        elif field_type in ['full_name', 'guardian_name', 'surname', 'first_name']:
+            # More aggressive filtering for names
+            cleaned = re.sub(r'[^A-Za-z\s\.,-]', '', value).title()
+            
+            # Remove field-related words from names
+            name_noise = ['Student', 'Guardian', 'Name', 'Contact', 'Number', 'Year', 'Course', 'Section']
+            words = cleaned.split()
+            cleaned_words = [word for word in words if word not in name_noise]
+            cleaned = ' '.join(cleaned_words).strip()
+            
+            # Must have at least 2 characters and not be a single word that's likely a field
+            if len(cleaned) > 2 and not cleaned.upper() in ['YEAR', 'COURSE', 'SECTION', 'CONTACT', 'GUARDIAN']:
+                return cleaned
+            return None
+        
+        elif field_type == 'year':
+            year_match = re.search(r'([1-4])', value)
+            return year_match.group(1) if year_match else None
+        
+        elif field_type in ['course', 'section']:
+            cleaned = re.sub(r'[^A-Z0-9]', '', value.upper())
+            return cleaned if cleaned and len(cleaned) >= 1 else None
+        
+        return value
 
     def clean_extracted_value(self, value, field_type):
         """Clean and validate extracted values, removing common noise and formatting."""
@@ -939,90 +1957,317 @@ class SmartStudentDataSystem:
 
     def split_into_student_records(self, text):
         """
-        Split a large block of text (from PDF) into individual student records.
-        This uses multiple strategies to identify record boundaries.
+        Enhanced method to split PDF text into individual student records
+        Specifically handles table-format PDFs with multiple students
         """
-        # Define patterns for strong record delimiters (Student ID or Full Name)
-        # These patterns are now more comprehensive and include common name formats.
+        lines = [line.strip() for line in text.split('\n') if line.strip()]
+        
+        print(f"🔍 PDF has {len(lines)} non-empty lines")
+        print(f"🔍 First 10 lines: {lines[:10]}")
+        
+        # Check if this is a table format
+        if self.is_table_format_pdf(lines):
+            print("📋 Detected table format PDF")
+            return self.extract_table_format_records(lines)
+        else:
+            print("📋 Detected individual record format PDF")
+            return self.extract_individual_format_records(text)
+        
+    def is_table_format_pdf(self, lines):
+        """Enhanced table format detection"""
+        # Look for table headers in first 10 lines (more flexible)
+        header_indicators = ['STUDENT ID', 'NAME', 'YEAR', 'COURSE', 'SECTION', 'CONTACT', 'GUARDIAN']
+        
+        found_headers = set()
+        
+        for i in range(min(10, len(lines))):  # Check first 10 lines
+            line_upper = lines[i].upper()
+            
+            # Check each header indicator
+            for indicator in header_indicators:
+                if indicator in line_upper:
+                    found_headers.add(indicator)
+                    print(f"   📋 Found header '{indicator}' in line {i}: {lines[i]}")
+        
+        # Need at least 4 different headers to consider it a table
+        is_table = len(found_headers) >= 4
+        print(f"   📋 Found {len(found_headers)} headers: {found_headers}")
+        print(f"   📋 Is table format: {is_table}")
+        
+        return is_table
+    
+    def extract_individual_format_records(self, text):
+        """Extract records from individual format PDFs (your existing logic)"""
+        # Use your existing delimiter-based approach
         delimiter_patterns = [
-            r'(?:STUDENT\s*ID|ID\s*NO|ID|STUDENT\s*NUMBER)[:\s]*([A-Z0-9-]+)', # "STUDENT ID: PDM-123456"
-            r'([A-Z]{2,4}-\d{4,6})',  # Pattern like PDM-123456, BSCS-2023
-            r'(\d{4,8})',  # Pure numbers, e.g., 20230001
-            r'(?:FULL\s*NAME|STUDENT\s*NAME|NAME)[:\s]*([A-Z][A-Z\s\.,-]+)', # "NAME: JOHN DOE"
-            r'([A-Z][A-Z\s\.,-]+(?:,\s*[A-Z][A-Z\s\.,-]+)?)\s*(?:STUDENT ID|ID NO|YEAR|COURSE|SECTION|CONTACT)', # Name before another field
-            r'([A-Z][A-Z\s\.,-]+)\s*\d{4,8}', # Name followed by a number (potential ID)
-            r'^\s*([A-Z][a-z]+(?:[\s,\.]+[A-Z][a-z]+){1,})\s*$', # Full name on its own line (e.g., "DOE, JOHN" or "John Doe")
-            r'^\s*(?:STUDENT|PUPIL)\s*INFORMATION\s*$', # NEW: "STUDENT INFORMATION" as a potential block start
-            r'^\s*([A-Z][a-z]+)\s+([A-Z][a-z]+)(?:\s+([A-Z][a-z]+))?\s*$', # NEW: First Middle Last name on its own line
-            r'^\s*PAGE\s*\d+\s*OF\s*\d+\s*$', # NEW: Page number as a potential delimiter (to avoid merging across pages)
-            r'^\s*-+\s*\d+\s*-+\s*$', # NEW: Page number in dashes (e.g., --- 1 ---)
+            r'(?:STUDENT\s*(?:ID|NUMBER|NO))\s*[:\-]?\s*([A-Z0-9-]+)',
+            r'([A-Z]{2,4}-\d{4,6})',
+            r'(\d{4,8})',
+            r'(?:NAME|STUDENT\s*NAME)\s*[:\-]?\s*([A-Z][A-Za-z\s\.,-]+)',
+            r'^\s*([A-Z][a-z]+(?:[\s,\.]+[A-Z][a-z]+){1,})\s*$',
+            r'^\s*STUDENT\s*(?:INFORMATION|RECORD|PROFILE)\s*$',
+            r'^\s*(?:PAGE|FORM)\s*\d+\s*(?:OF\s*\d+)?\s*$',
+            r'^\s*-{3,}\s*\d+\s*-{3,}\s*$',
+            r'^\s*(?:ENROLLMENT|REGISTRATION)\s*(?:FORM|RECORD)\s*$',
         ]
         
         all_lines = [line.strip() for line in text.split('\n') if line.strip()]
         records = []
         
-        # Collect all potential starting points of records (line index)
-        potential_record_starts = []
+        # Collect all potential starting points
+        potential_starts = []
         for i, line in enumerate(all_lines):
             for pattern in delimiter_patterns:
-                if re.search(pattern, line, re.IGNORECASE):
-                    potential_record_starts.append(i)
-                    break # Found a delimiter for this line, move to next line
+                if re.search(pattern, line, re.IGNORECASE | re.MULTILINE):
+                    potential_starts.append(i)
+                    break
         
         # Remove duplicates and sort
-        potential_record_starts = sorted(list(set(potential_record_starts)))
+        potential_starts = sorted(list(set(potential_starts)))
         
-        if not potential_record_starts:
-            # Fallback: if no strong delimiters found, assume each "significant" block is a record
-            # This is a very weak fallback, but better than nothing.
-            current_block = []
-            for line in all_lines:
-                # Consider lines with more than 2 words or containing key student info keywords as significant
-                if len(line.split()) > 2 or re.search(r'(ID|NAME|STUDENT|COURSE|YEAR|SECTION|CONTACT|GUARDIAN|PROGRAM|LEVEL)', line, re.IGNORECASE):
-                    current_block.append(line)
-                elif current_block: # If a significant block was being built and we hit an empty/insignificant line
-                    records.append('\n'.join(current_block))
-                    current_block = []
-            if current_block: # Add the last block if any
-                records.append('\n'.join(current_block))
-            return records if records else [text.strip()] if text.strip() else []
-
-
-        # Now, construct records based on these starting points
-        for i, start_line_idx in enumerate(potential_record_starts):
-            end_line_idx = len(all_lines)
-            if i + 1 < len(potential_record_starts):
-                end_line_idx = potential_record_starts[i+1]
+        if not potential_starts:
+            return [text.strip()] if text.strip() else []
+        
+        # Create records based on starting points
+        for i, start_idx in enumerate(potential_starts):
+            end_idx = len(all_lines)
+            if i + 1 < len(potential_starts):
+                end_idx = potential_starts[i + 1]
             
-            # Capture a block of lines for the current record
-            record_lines = all_lines[start_line_idx:end_line_idx]
-            
-            # Join lines to form the record text
+            record_lines = all_lines[start_idx:end_idx]
             record_content = '\n'.join(record_lines).strip()
             
-            if record_content:
+            if self.is_valid_pdf_student_record_content(record_content):
                 records.append(record_content)
         
-        # Filter out any records that are too short to be meaningful student data
-        # A student record should have at least an ID/Name and maybe a few other fields.
-        final_records = []
-        for record_text in records:
-            # A simple heuristic: if it contains an ID or a name-like pattern
-            # or if it contains multiple key student info fields
-            # Increased minimum length for a valid record
-            if (re.search(r'(ID|NAME|STUDENT ID|FULL NAME|BSCS|BSIT|YEAR|SECTION|\d{4,8})', record_text, re.IGNORECASE) and
-                len(record_text.splitlines()) > 2 and len(record_text.split()) > 10): # Must have a key identifier AND be sufficiently long
-                final_records.append(record_text)
-            elif (re.search(r'YEAR', record_text, re.IGNORECASE) and re.search(r'COURSE', record_text, re.IGNORECASE) and
-                  len(record_text.splitlines()) > 2 and len(record_text.split()) > 10): # If year and course are found, also consider
-                final_records.append(record_text)
-            # Add a fallback for very simple records that might not hit the above, but are clearly not headers
-            elif (re.search(r'^\s*([A-Z][a-z]+(?:[\s,\.]+[A-Z][a-z]+){1,})\s*$', record_text) and # Name on its own line
-                  re.search(r'\d{4,8}', record_text)): # and an ID somewhere
-                final_records.append(record_text)
-
-        return final_records if final_records else [text.strip()] if text.strip() else []
+        return records if records else [text.strip()] if text.strip() else []
     
+
+    def extract_table_format_records(self, lines):
+        """Enhanced table format extraction with better boundary detection"""
+        records = []
+        
+        # Find where student data starts (look for student ID pattern)
+        data_start = -1
+        for i, line in enumerate(lines):
+            # Look for student ID pattern like PDM-2025-0001
+            if re.match(r'^[A-Z]{2,4}-\d{4,6}-\d{1,4}$', line.strip()):
+                data_start = i
+                print(f"   📋 Student data starts at line {data_start}: {line}")
+                break
+        
+        if data_start == -1:
+            print("   ❌ Could not find student data start")
+            return []
+        
+        # Enhanced: Extract students by looking for ID patterns more carefully
+        i = data_start
+        while i < len(lines):
+            line = lines[i].strip()
+            
+            # Check if this is a student ID
+            if re.match(r'^[A-Z]{2,4}-\d{4,6}-\d{1,4}$', line):
+                print(f"\n   📋 Processing student starting at line {i}: {line}")
+                
+                # Collect student data more carefully
+                student_lines = [line]  # Student ID
+                
+                # Get the next fields, but be more flexible about the count
+                max_fields = 8  # Maximum expected fields
+                collected_fields = 0
+                
+                for j in range(1, max_fields):
+                    if i + j < len(lines):
+                        next_line = lines[i + j].strip()
+                        
+                        # Stop if we hit another student ID
+                        if re.match(r'^[A-Z]{2,4}-\d{4,6}-\d{1,4}$', next_line):
+                            print(f"      Found next student ID at line {i + j}, stopping collection")
+                            break
+                        
+                        # Stop if we hit empty line
+                        if not next_line:
+                            print(f"      Found empty line at {i + j}, stopping collection")
+                            break
+                        
+                        student_lines.append(next_line)
+                        collected_fields += 1
+                        print(f"      Field {j}: {next_line}")
+                    else:
+                        break
+                
+                # Create formatted record with what we have
+                if len(student_lines) >= 4:  # At least ID, Name, Year, Course
+                    record_text = self.format_table_record_enhanced(student_lines)
+                    if record_text:
+                        records.append(record_text)
+                        student_name = student_lines[1] if len(student_lines) > 1 else 'Unknown'
+                        print(f"   ✅ Created record for student: {student_name}")
+                    else:
+                        print(f"   ❌ Failed to format record for student")
+                else:
+                    print(f"   ❌ Insufficient data for student - only {len(student_lines)} fields")
+                
+                # Move to the next position based on what we collected
+                # Skip the fields we just processed
+                i += max(collected_fields + 1, 1)  # Move at least 1 position
+            else:
+                i += 1  # Move to next line
+        
+        print(f"📋 Extracted {len(records)} student records from table")
+        return records
+    
+    def format_table_record_enhanced(self, student_lines):
+        """Enhanced table record formatting with proper guardian data handling"""
+        try:
+            # Ensure we have minimum required fields
+            if len(student_lines) < 4:
+                print(f"   ❌ Insufficient data - only {len(student_lines)} fields")
+                return None
+            
+            # Extract with safe defaults
+            student_id = student_lines[0].strip() if len(student_lines) > 0 else ""
+            name = student_lines[1].strip() if len(student_lines) > 1 else ""
+            year = student_lines[2].strip() if len(student_lines) > 2 else ""
+            course = student_lines[3].strip() if len(student_lines) > 3 else ""
+            section = student_lines[4].strip() if len(student_lines) > 4 else ""
+            contact_raw = student_lines[5].strip() if len(student_lines) > 5 else ""
+            guardian_name_raw = student_lines[6].strip() if len(student_lines) > 6 else ""
+            guardian_contact_raw = student_lines[7].strip() if len(student_lines) > 7 else ""
+            
+            # Enhanced contact and guardian parsing
+            contact = ""
+            guardian_name = ""
+            guardian_contact = ""
+            
+            # Parse contact field (might contain guardian name)
+            if contact_raw:
+                contact_parts = contact_raw.split()
+                if len(contact_parts) >= 1:
+                    # First part should be the contact number
+                    potential_contact = contact_parts[0]
+                    if re.match(r'^09\d{9}$', potential_contact):
+                        contact = potential_contact
+                        # Rest might be guardian name if guardian_name_raw is a phone number
+                        if len(contact_parts) > 1:
+                            potential_guardian_name = " ".join(contact_parts[1:])
+                            
+                            # If guardian_name_raw looks like a phone number, use the name from contact field
+                            if re.match(r'^09\d{9}$', guardian_name_raw.strip()):
+                                guardian_name = potential_guardian_name
+                                guardian_contact = guardian_name_raw.strip()
+                            else:
+                                # guardian_name_raw is actually a name, use it
+                                guardian_name = guardian_name_raw
+                                guardian_contact = guardian_contact_raw
+                        else:
+                            # No extra name in contact, use guardian_name_raw as name
+                            if guardian_name_raw and not re.match(r'^09\d{9}$', guardian_name_raw.strip()):
+                                guardian_name = guardian_name_raw
+                                guardian_contact = guardian_contact_raw
+                            elif re.match(r'^09\d{9}$', guardian_name_raw.strip()):
+                                guardian_contact = guardian_name_raw.strip()
+                    else:
+                        # contact_raw doesn't start with valid phone, use as is
+                        contact = contact_raw
+                else:
+                    contact = contact_raw
+            
+            # Fallback: if we still don't have guardian info, try to extract from remaining fields
+            if not guardian_name and not guardian_contact:
+                if guardian_name_raw:
+                    if re.match(r'^09\d{9}$', guardian_name_raw.strip()):
+                        guardian_contact = guardian_name_raw.strip()
+                    else:
+                        guardian_name = guardian_name_raw.strip()
+                
+                if guardian_contact_raw:
+                    if re.match(r'^09\d{9}$', guardian_contact_raw.strip()):
+                        guardian_contact = guardian_contact_raw.strip()
+                    elif not guardian_name:
+                        guardian_name = guardian_contact_raw.strip()
+            
+            # Clean up extracted values
+            if guardian_name:
+                # Remove phone numbers from guardian name
+                guardian_name = re.sub(r'\b09\d{9}\b', '', guardian_name).strip()
+                guardian_name = re.sub(r'\s+', ' ', guardian_name).strip()
+            
+            if guardian_contact:
+                # Extract only valid phone numbers
+                phone_match = re.search(r'\b(09\d{9})\b', guardian_contact)
+                if phone_match:
+                    guardian_contact = phone_match.group(1)
+                elif re.match(r'^09\d{9}$', guardian_contact.strip()):
+                    guardian_contact = guardian_contact.strip()
+                else:
+                    guardian_contact = ""
+            
+            # Validate that we have essential data
+            if not student_id or not name:
+                print(f"   ❌ Missing essential data - ID: '{student_id}', Name: '{name}'")
+                return None
+            
+            # Format as structured text that our parser can understand
+            formatted_record = f"""Student ID: {student_id}
+    Name: {name}
+    Year: {year}
+    Course: {course}
+    Section: {section}
+    Contact Number: {contact}
+    Guardian Name: {guardian_name}
+    Guardian Contact: {guardian_contact}"""
+            
+            print(f"   📋 Enhanced formatted record for {name}")
+            print(f"      Contact: {contact}")
+            print(f"      Guardian Name: {guardian_name}")
+            print(f"      Guardian Contact: {guardian_contact}")
+            return formatted_record
+            
+        except Exception as e:
+            print(f"   ❌ Error formatting record: {e}")
+            return None
+    
+    def format_table_record(self, record_lines):
+        """Format table record lines into structured student data"""
+        if len(record_lines) < 4:  # Need at least ID, Name, Year/Course/Section, Contact
+            return None
+        
+        # Expected order based on your PDF:
+        # Line 0: Student ID (e.g., PDM-2025-0001)
+        # Line 1: Name (e.g., Daniel Gomez)
+        # Line 2: Year (e.g., 1st Year)  
+        # Line 3: Course (e.g., BSCS)
+        # Line 4: Section (e.g., A)
+        # Line 5: Contact Number
+        # Line 6: Guardian Name
+        # Line 7: Guardian Contact
+        
+        try:
+            student_id = record_lines[0] if len(record_lines) > 0 else ""
+            name = record_lines[1] if len(record_lines) > 1 else ""
+            year = record_lines[2] if len(record_lines) > 2 else ""
+            course = record_lines[3] if len(record_lines) > 3 else ""
+            section = record_lines[4] if len(record_lines) > 4 else ""
+            contact = record_lines[5] if len(record_lines) > 5 else ""
+            guardian_name = record_lines[6] if len(record_lines) > 6 else ""
+            guardian_contact = record_lines[7] if len(record_lines) > 7 else ""
+            
+            # Format as structured text
+            formatted_record = f"""Student ID: {student_id}
+    Name: {name}
+    Year: {year}
+    Course: {course}
+    Section: {section}
+    Contact Number: {contact}
+    Guardian Name: {guardian_name}
+    Guardian Contact: {guardian_contact}"""
+            
+            return formatted_record
+            
+        except Exception as e:
+            print(f"   ❌ Error formatting record: {e}")
+            return None
     
     def extract_universal_teaching_faculty_data(self, text_content, source_type):
         """Enhanced universal extractor that processes structured key-value pairs properly."""
@@ -1625,7 +2870,6 @@ class SmartStudentDataSystem:
         
         return text.strip()
     
-    
     def standardize_department_name(self, department):
         """Smart department standardization that handles abbreviations"""
         if not department:
@@ -1634,10 +2878,10 @@ class SmartStudentDataSystem:
         dept_upper = department.upper().strip()
         
         # Handle direct abbreviations first
-        if dept_upper == 'CCS':
+        if dept_upper == 'CAS':
+            return 'CAS'
+        elif dept_upper == 'CCS':
             return 'CCS'
-        # REMOVE THIS LINE: elif dept_upper == 'IT':
-        #     return 'CCS'
         elif dept_upper == 'CTE':
             return 'CTE'
         elif dept_upper == 'CHTM':
@@ -1646,16 +2890,18 @@ class SmartStudentDataSystem:
             return 'CBA'
         elif dept_upper == 'COE':
             return 'COE'
-        elif dept_upper == 'CAS':
-            return 'CAS'
         elif dept_upper == 'CON':
             return 'CON'
         
         # Map full names to abbreviations
         dept_mappings = {
+            'COLLEGE OF ARTS & SCIENCES': 'CAS',
+            'COLLEGE OF ARTS AND SCIENCES': 'CAS',
+            'ARTS AND SCIENCES': 'CAS',
+            'MATHEMATICS DEPARTMENT': 'CAS',  # Math typically under Arts & Sciences
             'COLLEGE OF COMPUTER STUDIES': 'CCS',
             'COMPUTER STUDIES': 'CCS',
-            'INFORMATION TECHNOLOGY': 'IT',  # Map full name to IT
+            'INFORMATION TECHNOLOGY': 'CCS',  # IT under Computer Studies
             'COLLEGE OF EDUCATION': 'CTE',
             'EDUCATION': 'CTE',
             'COLLEGE OF HOSPITALITY': 'CHTM',
@@ -1666,8 +2912,6 @@ class SmartStudentDataSystem:
             'OFFICE ADMINISTRATION': 'CBA',
             'COLLEGE OF ENGINEERING': 'COE',
             'ENGINEERING': 'COE',
-            'COLLEGE OF ARTS': 'CAS',
-            'ARTS AND SCIENCES': 'CAS',
             'COLLEGE OF NURSING': 'CON',
             'NURSING': 'CON',
         }
@@ -1678,7 +2922,7 @@ class SmartStudentDataSystem:
                 return abbrev
         
         # If no mapping found, return as-is (cleaned)
-        return dept_upper  # This will return "IT" as "IT"
+        return dept_upper
 
     def intelligently_categorize_department(self, dept_upper):
         """Intelligently categorize unknown departments based on keywords"""
@@ -1870,13 +3114,13 @@ class SmartStudentDataSystem:
     def get_department_display_name(self, dept_code):
         """Enhanced department display names that handle new departments"""
         dept_names = {
+            'CAS': 'College of Arts & Sciences',
             'CCS': 'College of Computer Studies',
             'IT': 'Information Technology Department',
             'COE': 'College of Engineering', 
             'CHTM': 'College of Hospitality & Tourism Management',
             'CBA': 'College of Business Administration',
             'CTE': 'College of Education',
-            'CAS': 'College of Arts & Sciences',
             'CON': 'College of Nursing',
             'ADMIN': 'Administration',
             'NEW_DEPT': 'New Academic Department',
@@ -2078,6 +3322,49 @@ class SmartStudentDataSystem:
             final_name = "_".join(filter(None, name_parts)).lower()
             return re.sub(r'_{2,}', '_', final_name).strip('_')
         
+        # For student grades, organize by same hierarchy as students but add _grades suffix
+        elif base_name == "students_grades":
+            department = metadata.get('department', '').lower()
+            course = metadata.get('course', '').lower()
+            year = str(metadata.get('year_level', ''))
+            section = metadata.get('section', '').lower()
+            
+            if course and course != 'unknown':
+                course_match = re.match(r'^(BS[A-Z]{2,4}|AB[A-Z]{2,4}|B[A-Z]{2,4})', course.upper())
+                if course_match:
+                    course = course_match.group(1).lower()
+                elif re.match(r'^[A-Z]{2,6}$', course.upper()):
+                    course = course.lower()
+                else:
+                    course = 'newcourse'
+            else:
+                course = 'general'
+            
+            if department and department not in ['unknown', 'new_dept']:
+                name_parts = ["students", department]
+            elif department == 'new_dept':
+                name_parts = ["students", 'newdept']
+            else:
+                name_parts = ["students", 'unclassified']
+
+            name_parts.append(course)
+
+            if year and year not in ['0', '']:
+                year_clean = re.sub(r'[^\d]', '', str(year))
+                if year_clean:
+                    name_parts.append(f"year{year_clean}")
+            
+            if section:
+                section_clean = re.sub(r'[^a-zA-Z0-9]', '', section)
+                if section_clean:
+                    name_parts.append(f"sec{section_clean.lower()}")
+            
+            # Add grades suffix
+            name_parts.append("grades")
+
+            final_name = "_".join(filter(None, name_parts)).lower()
+            return re.sub(r'_{2,}', '_', final_name).strip('_')
+        
         # For faculty, organize by department and type
         elif base_name == "faculty":
             department = metadata.get('department', 'unknown').lower()
@@ -2246,21 +3533,21 @@ class SmartStudentDataSystem:
                 ids=[doc_id]
             )
             
-    def smart_search_with_ai_reasoning(self, query, max_results=50):
+    def smart_search_with_ai_reasoning(self, query, max_results=20):
         """True AI-powered smart search with contextual understanding"""
         query_intent = self.analyze_query_intent(query)
         query_intent['query'] = query
         search_strategy = self.determine_search_strategy(query_intent)
-
-        if self.debug_mode: print(f"🧠 AI Analysis: {query_intent['intent']} | Strategy: {search_strategy['type']}")
-
+        
+        print(f"🧠 AI Analysis: {query_intent['intent']} | Strategy: {search_strategy['type']}")
+        
         all_results = []
-
+        
         for name, collection_obj in self.collections.items():
             try:
                 where_clause = self.build_smart_filters(query_intent, name)
                 search_results_count = max(1, max_results // 2 if not search_strategy['broad'] else max_results)
-
+                
                 if where_clause and 'impossible_filter' in where_clause:
                     continue
 
@@ -2271,13 +3558,12 @@ class SmartStudentDataSystem:
 
                 if where_clause:
                     query_params["where"] = where_clause
-
+                
                 try:
                     results = collection_obj.query(**query_params)
                 except Exception as query_error:
-                    # --- CHANGE IS HERE ---
-                    if self.debug_mode:
-                        print(f"⚠️ Skipping collection {name} due to query error: {query_error}")
+                    print(f"⚠️ Skipping collection {name} due to query error: {query_error}")
+                    # Try to reinitialize the collection
                     try:
                         collection_obj = self.client.get_collection(
                             name=name,
@@ -2285,27 +3571,27 @@ class SmartStudentDataSystem:
                         )
                         self.collections[name] = collection_obj
                         results = collection_obj.query(**query_params)
-                        if self.debug_mode:
-                            print(f"✅ Successfully recovered collection {name}")
+                        print(f"✅ Successfully recovered collection {name}")
                     except Exception as recovery_error:
-                        # --- AND CHANGE IS HERE ---
-                        if self.debug_mode:
-                            print(f"❌ Could not recover collection {name}: {recovery_error}")
+                        print(f"❌ Could not recover collection {name}: {recovery_error}")
                         continue
-
+                
                 if results["documents"] and results["documents"][0]:
                     for i, doc in enumerate(results["documents"][0]):
                         metadata = results["metadatas"][0][i] if results["metadatas"][0] else {}
-                        chroma_distance = results["distances"][0][i]
-
+                        chroma_distance = results["distances"][0][i] 
+                        
                         relevance_score = self.calculate_ai_relevance(query_intent, doc, metadata, chroma_distance)
-
+                        
+                        # FIX: Lower threshold check here
                         min_threshold = 5 if query_intent['intent'] == 'person_search' else search_strategy['threshold']
-
+                        
                         if relevance_score >= min_threshold:
                             collection_type = self.get_collection_type(name)
+                            
+                            # ENHANCED: Use the new hierarchy display method for all types
                             hierarchy = self.get_proper_hierarchy_display(name, metadata)
-
+                                                    
                             all_results.append({
                                 "source": collection_type,
                                 "content": doc,
@@ -2314,25 +3600,20 @@ class SmartStudentDataSystem:
                                 "relevance": relevance_score,
                                 "match_reason": self.explain_match(query_intent, doc, metadata)
                             })
-                            if self.debug_mode:
-                                print(f"✅ Added result with relevance {relevance_score}")
+                            print(f"✅ Added result with relevance {relevance_score}")
                         else:
-                            if self.debug_mode:
-                                print(f"❌ Rejected result with relevance {relevance_score} (threshold: {min_threshold})")
-
+                            print(f"❌ Rejected result with relevance {relevance_score} (threshold: {min_threshold})")
+                            
             except Exception as e:
-                if self.debug_mode:
-                    print(f"⚠️ Error searching {name}: {e}")
-
-        if self.debug_mode:
-            print(f"🔍 Total results before final filtering: {len(all_results)}")
-
+                print(f"⚠️ Error searching {name}: {e}")
+        
+        print(f"🔍 Total results before final filtering: {len(all_results)}")
+        
+        # TEMPORARY: Skip the problematic rank_and_filter_results method
         all_results.sort(key=lambda x: x['relevance'], reverse=True)
         final_results = all_results[:max_results]
-
-        if self.debug_mode:
-            print(f"🔍 Final results after sorting: {len(final_results)}")
-            
+        
+        print(f"🔍 Final results after sorting: {len(final_results)}")
         return final_results
     
     def get_proper_hierarchy_display(self, collection_name, metadata):
@@ -2406,59 +3687,134 @@ class SmartStudentDataSystem:
                 print(f"   Suggestion: Delete and reload this collection")
 
     def analyze_query_intent(self, query):
-        """
-        Analyze what the user is really looking for using an LLM-based approach.
-        """
-        # Get the structured analysis from the LLM
-        analyzed_data = self.analyze_query_with_llm(query)
-
-        # Populate the intent dictionary from the LLM's response
+        """Enhanced query analysis with better person name extraction"""
+        query_upper = query.upper()
         intent = {
-            'intent': analyzed_data.get('intent', 'general'),
-            'target_course': analyzed_data.get('target_course'),
-            'target_year': analyzed_data.get('target_year'),
-            'target_section': analyzed_data.get('target_section'),
-            'target_person': analyzed_data.get('target_person'),
-            'target_subject': analyzed_data.get('target_subject'),
-            'data_type': analyzed_data.get('data_type'),
-            'specificity': 'low',  # Start with low specificity
+            'intent': 'general',
+            'target_course': None,
+            'target_year': None,
+            'target_section': None,
+            'target_person': None,
+            'target_subject': None,
+            'data_type': None,
+            'specificity': 'medium',
             'query': query
         }
-
-        # Keep the existing specificity calculation logic, as it's still very useful.
+        
+        # ENHANCED DETECTION 1: Academic subject detection (universal patterns)
+        if re.search(r'\b[A-Z]{2,5}\s*\d{3}[A-Z]?\b', query_upper):  # Any subject code pattern
+            subject_match = re.search(r'\b[A-Z]{2,5}\s*\d{3}[A-Z]?\b', query_upper)
+            intent['target_subject'] = subject_match.group(0)
+            intent['intent'] = 'subject_search'
+            intent['data_type'] = 'schedule'
+            print(f"   Detected subject search: {intent['target_subject']}")
+            return intent
+        
+        # ENHANCED DETECTION 2: "WHO IS" pattern with better name extraction
+        if 'WHO IS' in query_upper:
+            # Extract name after "WHO IS"
+            name_part = query_upper.split('WHO IS', 1)[1].strip()
+            # Remove question mark and clean the name
+            name_part = name_part.rstrip('?').strip()
+            if name_part:
+                intent['target_person'] = name_part.title()
+                intent['intent'] = 'person_search'
+                print(f"   Detected person search: {intent['target_person']}")
+                return intent
+        
+        # ENHANCED DETECTION 3: Faculty/Title detection with better patterns
+        faculty_patterns = [
+            r'\b(DR\.?\s+[A-Z][A-Za-z]+)\b',  # Dr. Smith
+            r'\b(PROF\.?\s+[A-Z][A-Za-z]+)\b',  # Prof. Johnson
+            r'\b(MR\.?\s+[A-Z][A-Za-z]+)\b',   # Mr. Davis
+            r'\b(MS\.?\s+[A-Z][A-Za-z]+)\b',   # Ms. Wilson
+            r'\b(MRS\.?\s+[A-Z][A-Za-z]+)\b', # Mrs. Brown
+        ]
+        
+        for pattern in faculty_patterns:
+            match = re.search(pattern, query_upper)
+            if match:
+                intent['target_person'] = match.group(1).replace('.', '. ').title()
+                intent['intent'] = 'person_search'  # Changed from faculty_search to person_search
+                intent['data_type'] = 'schedule'
+                print(f"   Detected faculty/adviser search: {intent['target_person']}")
+                return intent
+        
+        # ENHANCED DETECTION 4: Simple name detection (improved)
+        # Look for capitalized names that might be faculty or students
+        name_patterns = [
+            r'\b([A-Z][a-z]+\s+[A-Z][a-z]+)\b',  # First Last
+            r'\b([A-Z][a-z]+)\b(?=\s*$)',        # Single name at end
+        ]
+        
+        for pattern in name_patterns:
+            matches = re.findall(pattern, query)
+            if matches:
+                # Filter out common non-name words
+                non_names = ['YEAR', 'COURSE', 'SECTION', 'STUDENT', 'FACULTY', 'SCHEDULE', 'CLASS']
+                for match in matches:
+                    if match.upper() not in non_names and len(match) > 2:
+                        intent['target_person'] = match.title()
+                        intent['intent'] = 'person_search'
+                        print(f"   Detected name search: {intent['target_person']}")
+                        return intent
+        
+        # ENHANCED DETECTION 5: Course program detection (universal patterns)
+        if re.search(r'\b(BS|AB|B)[A-Z]{2,4}\b', query_upper):
+            course_match = re.search(r'\b(BS|AB|B)[A-Z]{2,4}\b', query_upper)
+            intent['target_course'] = course_match.group(0)
+            intent['intent'] = 'course_specific'
+        
+        # ENHANCED DETECTION 6: Year level detection (universal patterns)
+        if re.search(r'\b([1-4])(?:ST|ND|RD|TH)?\s*YEAR\b', query_upper):
+            year_match = re.search(r'\b([1-4])(?:ST|ND|RD|TH)?\s*YEAR\b', query_upper)
+            intent['target_year'] = year_match.group(1)
+            intent['intent'] = 'year_specific'
+        elif re.search(r'\bYEAR\s*([1-4])\b', query_upper):
+            year_match = re.search(r'\bYEAR\s*([1-4])\b', query_upper)
+            intent['target_year'] = year_match.group(1)
+            intent['intent'] = 'year_specific'
+        
+        # ENHANCED DETECTION 7: Section detection (universal patterns)
+        if re.search(r'\bSECTION\s*([A-Z0-9]+)\b', query_upper):
+            section_match = re.search(r'\bSECTION\s*([A-Z0-9]+)\b', query_upper)
+            intent['target_section'] = section_match.group(1)
+            intent['intent'] = 'section_specific'
+        
+        # ENHANCED DETECTION 8: Schedule context detection
+        schedule_keywords = ['SCHEDULE', 'COR', 'CLASS', 'SUBJECT', 'UNIT', 'COURSE', 'TIME', 'ROOM']
+        if any(keyword in query_upper for keyword in schedule_keywords):
+            intent['data_type'] = 'schedule'
+            intent['intent'] = 'schedule_search'
+        
+        # ENHANCED SPECIFICITY CALCULATION
         specific_elements = sum([
-            1 for x in [intent['target_course'], intent['target_year'],
+            1 for x in [intent['target_course'], intent['target_year'], 
                     intent['target_section'], intent['target_person'], intent['target_subject']] if x
         ])
-
+        
         if specific_elements >= 3:
             intent['specificity'] = 'high'
         elif specific_elements >= 1:
             intent['specificity'] = 'medium'
         else:
             intent['specificity'] = 'low'
-
-        if self.debug_mode:
-            print(f"🤖 AI Intent Analysis Result: {intent}")
-
+        
         return intent
 
     def determine_search_strategy(self, query_intent):
         """Universal smart search strategy determination"""
-
-        # --- NEW ENHANCEMENT: Override for list retrieval mode ---
-        # This allows the new workflow to force a threshold of 0 for complete lists.
-        if hasattr(self, '_is_list_retrieval_mode') and self._is_list_retrieval_mode:
-            return {'type': 'list_retrieval', 'broad': True, 'threshold': 0}
-        # --- END OF ENHANCEMENT ---
-
-        # --- ORIGINAL CODE (UNCHANGED) ---
+        
+        # Base universal strategy
         strategy = {
             'type': 'balanced',
             'broad': True,
             'threshold': 30
         }
         
+        # SMART STRATEGY: Adjust based on query characteristics
+        
+        # High specificity = precise search regardless of intent type
         if query_intent['specificity'] == 'high':
             strategy = {
                 'type': 'precise',
@@ -2466,13 +3822,15 @@ class SmartStudentDataSystem:
                 'threshold': 70
             }
         
+        # Person search = lower threshold to catch faculty names
         elif query_intent['intent'] == 'person_search':
             strategy = {
                 'type': 'person_focused',
                 'broad': False,
-                'threshold': 25
+                'threshold': 25  # Lower threshold from 40 to 25 for person searches
             }
         
+        # Medium specificity with clear target = focused search
         elif query_intent['specificity'] == 'medium' and any([
             query_intent['target_person'], 
             query_intent['target_subject'],
@@ -2484,186 +3842,171 @@ class SmartStudentDataSystem:
                 'threshold': 50
             }
         
+        # Low specificity = broader search with lower threshold
         elif query_intent['specificity'] == 'low':
             strategy = {
                 'type': 'broad',
                 'broad': True,
                 'threshold': 25
             }
-         
+        
         return strategy
 
     def build_smart_filters(self, query_intent, collection_name):
-        """Build dynamic filters based on AI analysis with correct $and operator."""
-        
-        # --- NEW ENHANCEMENT: Handle person searches flexibly ---
-        # If the user is looking for a person, we should not restrict the search
-        # based on the AI's data_type guess (e.g., 'student' vs 'faculty').
-        # Instead, we search all relevant collections and let the relevance score decide.
-        if query_intent['intent'] == 'person_search':
-            # We still build filters for other details provided with the name,
-            # like course or year, but we deliberately ignore the data_type filter.
-            person_search_conditions = []
-            if query_intent['target_course']:
-                person_search_conditions.append({'course': query_intent['target_course']})
-            if query_intent['target_year']:
-                try:
-                    year_val = int(query_intent['target_year'])
-                    person_search_conditions.append({"$or": [{'year_level': str(year_val)}, {'year_level': year_val}]})
-                except (ValueError, TypeError):
-                    person_search_conditions.append({'year_level': str(query_intent['target_year'])})
-            if query_intent['target_section']:
-                person_search_conditions.append({'section': query_intent['target_section']})
-            
-            # Construct and return the filter for the person search, bypassing the original logic.
-            if not person_search_conditions:
-                return {} # Return empty filter to search everywhere for the name
-            elif len(person_search_conditions) == 1:
-                return person_search_conditions[0]
-            else:
-                return {"$and": person_search_conditions}
-        # --- END OF ENHANCEMENT ---
-
-
-        # --- ORIGINAL CODE (UNCHANGED) ---
-        # This original logic will now only run for non-person searches (e.g., schedule_search),
-        # where the data_type filter is still essential.
-        conditions = []
+        """Build dynamic filters based on AI analysis"""
+        where_clause = {}
         
         # Only apply filters if we have specific targets
         if query_intent['target_course']:
-            conditions.append({'course': query_intent['target_course']})
+            where_clause['course'] = query_intent['target_course']
         
         if query_intent['target_year']:
-            # Metadata year_level can be int or str, so we check for both
-            try:
-                year_val = int(query_intent['target_year'])
-                conditions.append({"$or": [{'year_level': str(year_val)}, {'year_level': year_val}]})
-            except (ValueError, TypeError):
-                conditions.append({'year_level': str(query_intent['target_year'])})
-
-        if query_intent['target_section']:
-            conditions.append({'section': query_intent['target_section']})
+            where_clause['year_level'] = query_intent['target_year']
         
-        # Collection-specific filtering logic
+        if query_intent['target_section']:
+            where_clause['section'] = query_intent['target_section']
+        
+        # Collection-specific filtering
         if query_intent['data_type']:
             if query_intent['data_type'] == 'student' and 'faculty' in collection_name:
-                return {'impossible_filter': 'skip'}
+                return {'impossible_filter': 'skip'}  # Skip this collection
             elif query_intent['data_type'] == 'faculty' and 'student' in collection_name:
                 return {'impossible_filter': 'skip'}
             elif query_intent['data_type'] == 'schedule' and 'student' in collection_name:
                 return {'impossible_filter': 'skip'}
-
-        # Construct the final where_clause
-        if not conditions:
-            return {}
-        elif len(conditions) == 1:
-            return conditions[0]
-        else:
-            return {"$and": conditions}
+        
+        return where_clause
 
 
     def calculate_ai_relevance(self, query_intent, document, metadata, chroma_distance):
-        """Calculate relevance score using AI reasoning, with improved single-name query handling."""
+        """Enhanced relevance calculation with better person name matching"""
         score = 0
         doc_upper = document.upper()
 
-        # --- NEW ENHANCEMENT 1: GUARANTEE CONSISTENT PERSON SEARCH ---
-        # This logic runs first. If it's a clear person search with a name match,
-        # it returns a high score immediately, fixing the inconsistency issue.
-        if query_intent['intent'] == 'person_search' and query_intent['target_person']:
-            target_person_upper = query_intent['target_person'].upper()
-            if (metadata.get('full_name') and target_person_upper in metadata['full_name'].upper()) or \
-               (target_person_upper in doc_upper):
-                if self.debug_mode: print(f"🎯 DEFINITIVE PERSON MATCH. Score set to 95.")
-                return 95
-
-        # --- NEW ENHANCEMENT 2: GUARANTEE COMPLETE LISTS ---
-        # This logic adds a large boost for broad category queries to ensure all
-        # relevant documents (like all 30 students) get a high score.
-        is_list_query = bool(query_intent.get('target_course') or query_intent.get('target_year'))
-        is_person_query = bool(query_intent.get('target_person'))
-        if is_list_query and not is_person_query:
-            course_match = (query_intent['target_course'] and metadata.get('course') and query_intent['target_course'].upper() in str(metadata.get('course')).upper())
-            year_match = (query_intent['target_year'] and str(metadata.get('year_level')) == str(query_intent['target_year']))
-            
-            if course_match and year_match:
-                score += 80
-                if self.debug_mode: print(f"🎯 STRONG CATEGORY MATCH (Course & Year). +80")
-            elif course_match or year_match:
-                score += 60
-                if self.debug_mode: print(f"🎯 CATEGORY MATCH (Course or Year). +60")
-        
-        # --- ORIGINAL CODE (UNCHANGED) ---
-        # The original logic below is preserved and acts as the baseline.
-        
-        # Convert ChromaDB distance to a base semantic score
+        # Convert ChromaDB distance to semantic score
         semantic_base_score = max(0, 70 - (chroma_distance * 2))
         score += semantic_base_score
 
-        # ENHANCED Person search scoring
+        # ENHANCED Subject search scoring
+        if query_intent['target_subject']:
+            target_subject_upper = query_intent['target_subject'].upper()
+            
+            if target_subject_upper in doc_upper:
+                score += 40
+            
+            subject_patterns = [
+                rf'\b{re.escape(target_subject_upper)}\b',
+                rf'{re.escape(target_subject_upper)}',
+                rf'{re.escape(target_subject_upper[:-1])}',
+            ]
+            
+            for pattern in subject_patterns:
+                if re.search(pattern, doc_upper):
+                    score += 35
+                    break
+
+        # ENHANCED Person search scoring with much better faculty detection
         if query_intent['target_person']:
             target_person_upper = query_intent['target_person'].upper()
-            name_parts = query_intent['target_person'].split()
-
-            if self.debug_mode:
-                print(f"🔍 Looking for person: '{target_person_upper}' in document")
-
-            # --- NEW LOGIC FOR SINGLE-NAME QUERIES ---
-            # If the query is just a single name, give a large boost for matches in name fields.
-            if len(name_parts) == 1:
-                if metadata.get('first_name') and target_person_upper == metadata['first_name'].upper():
-                    score += 85
-                    if self.debug_mode: print(f"🎯 Found exact first name in metadata: +85")
-                elif metadata.get('full_name') and target_person_upper in metadata['full_name'].upper():
-                    score += 75
-                    if self.debug_mode: print(f"🎯 Found single name within full name in metadata: +75")
-
-            # --- Existing multi-word name logic ---
+            
+            print(f"🔍 Looking for person: '{target_person_upper}' in document")
+            
+            # ENHANCED: Handle titles like "DR. SMITH" -> also search for "SMITH"
+            name_parts = []
+            if target_person_upper.startswith(('DR.', 'PROF.', 'MR.', 'MS.', 'MRS.')):
+                # Extract the actual name without title
+                title_removed = re.sub(r'^(DR\.?|PROF\.?|MR\.?|MS\.?|MRS\.?)\s*', '', target_person_upper).strip()
+                name_parts = [target_person_upper, title_removed]  # Search for both full and name-only
             else:
-                full_match_found_in_doc = False
-                # Priority 1: Boost for exact matches in metadata fields
-                if metadata.get('full_name') and target_person_upper in metadata['full_name'].upper():
+                name_parts = [target_person_upper]
+            
+            found_match = False
+            
+            for search_name in name_parts:
+                if not search_name:
+                    continue
+                    
+                print(f"🔍 Searching for: '{search_name}'")
+                
+                # Very high boost for exact matches in faculty metadata
+                if metadata.get('full_name') and search_name in metadata['full_name'].upper():
                     score += 80
-                    full_match_found_in_doc = True
-                    if self.debug_mode: print(f"🎯 Found exact name in 'full_name' metadata: +80")
-                elif metadata.get('surname') and target_person_upper in metadata['surname'].upper():
+                    found_match = True
+                    print(f"🎯 Found in full_name metadata: +80")
+                elif metadata.get('surname') and search_name in metadata['surname'].upper():
                     score += 75
-                    full_match_found_in_doc = True
-                    if self.debug_mode: print(f"🎯 Found name in 'surname' metadata: +75")
-
-                # Priority 2: Boost for exact match in the document content
-                if target_person_upper in doc_upper:
+                    found_match = True
+                    print(f"🎯 Found in surname metadata: +75")
+                elif metadata.get('first_name') and search_name in metadata['first_name'].upper():
+                    score += 75
+                    found_match = True
+                    print(f"🎯 Found in first_name metadata: +75")
+                
+                # ENHANCED: Check adviser field specifically for COR schedules
+                if metadata.get('adviser') and search_name in metadata['adviser'].upper():
+                    score += 90  # Higher score for adviser matches
+                    found_match = True
+                    print(f"🎯 Found in adviser metadata: +90")
+                
+                # High boost for names in document content
+                if search_name in doc_upper:
                     score += 60
-                    full_match_found_in_doc = True
-                    if self.debug_mode: print(f"🎯 Found exact name in document content: +60")
+                    found_match = True
+                    print(f"🎯 Found in document content: +60")
+                
+                # Check for faculty-specific context
+                if any(term in doc_upper for term in ['FACULTY', 'PROFESSOR', 'INSTRUCTOR', 'TEACHER', 'ADVISER', 'ADVISOR']):
+                    if search_name in doc_upper:
+                        score += 70
+                        found_match = True
+                        print(f"🎯 Found in faculty context: +70")
+                
+                # Enhanced partial name matching - MORE AGGRESSIVE
+                individual_name_parts = search_name.split()
+                partial_matches = 0
+                for part in individual_name_parts:
+                    if len(part) > 2:
+                        # Check document content
+                        if part in doc_upper:
+                            partial_matches += 1
+                            score += 35
+                            found_match = True
+                            print(f"🎯 Partial match '{part}' in document: +35")
+                        
+                        # Check metadata fields more thoroughly
+                        for field in ['full_name', 'surname', 'first_name', 'adviser']:
+                            if metadata.get(field) and part in metadata[field].upper():
+                                partial_matches += 1
+                                score += 40
+                                found_match = True
+                                print(f"🎯 Partial match '{part}' in {field}: +40")
+                                break
+                
+                # Boost score if multiple name parts match
+                if partial_matches > 1:
+                    score += 25
+                    found_match = True
+                    print(f"🎯 Multiple name parts matched: +25")
+                
+                # If we found a match with this search term, we can break
+                if found_match:
+                    break
+            
+            # Special boost for single name searches in faculty context
+            if len(target_person_upper.split()) == 1 and any(term in doc_upper for term in ['FACULTY', 'PROFESSOR', 'TEACHING', 'ADVISER']):
+                score += 30
+                print(f"🎯 Single name in faculty context: +30")
 
-                # Priority 3: If no full match found, check for partial matches
-                if not full_match_found_in_doc:
-                    if len(name_parts) > 1:
-                        partial_matches = 0
-                        for part in name_parts:
-                            if len(part) > 2:
-                                if part.upper() in doc_upper:
-                                    partial_matches += 1
-                                    score += 35
-                                    if self.debug_mode: print(f"🎯 Partial match '{part}' in document: +35")
-                                elif metadata.get('full_name') and part.upper() in metadata['full_name'].upper():
-                                    partial_matches += 1
-                                    score += 40
-                                    if self.debug_mode: print(f"🎯 Partial match '{part}' in metadata: +40")
-
-                        if partial_matches > 1:
-                            score += 25
-                            if self.debug_mode: print(f"🎯 Multiple name parts matched: +25")
-
-        # Scoring for other fields
+        # Rest of the scoring logic remains the same...
         if query_intent['target_course'] and query_intent['target_course'] in doc_upper:
             score += 25
+        
         if query_intent['target_year'] and str(query_intent['target_year']) in doc_upper:
             score += 20
+        
         if query_intent['target_section'] and query_intent['target_section'] in doc_upper:
             score += 20
+
         if metadata:
             if query_intent['target_course'] and metadata.get('course') and query_intent['target_course'] in metadata['course'].upper():
                 score += 15
@@ -2671,11 +4014,9 @@ class SmartStudentDataSystem:
                 score += 15
             if query_intent['target_section'] and metadata.get('section') and query_intent['target_section'] in metadata['section'].upper():
                 score += 15
-
+        
         final_score = max(0, min(100, score))
-        if self.debug_mode:
-            print(f"🔍 Final relevance score: {final_score} (raw: {score})")
-            
+        print(f"🔍 Final relevance score: {final_score} (raw: {score})")
         return final_score
 
     def rank_and_filter_results(self, results, query_intent, max_results):
@@ -2871,7 +4212,6 @@ class SmartStudentDataSystem:
         
         return False
     
-    
     def is_metadata_duplicate(self, new_meta, existing_meta, data_type):
         """Check for duplicates based on key metadata fields"""
         
@@ -2956,9 +4296,23 @@ class SmartStudentDataSystem:
                 new_dept and existing_dept and new_dept == existing_dept):
                 print(f"      🎯 MATCH: Same Curriculum ({new_program} in {new_dept})")
                 return True
+            
+        elif data_type == 'student_grades':
+            # For student grades, check if it's for the same student
+            student_id1 = str(new_meta.get('student_number', '')).strip().upper()
+            student_id2 = str(existing_meta.get('student_number', '')).strip().upper()
+            student_name1 = str(new_meta.get('student_name', '')).strip().upper()
+            student_name2 = str(existing_meta.get('student_name', '')).strip().upper()
+            
+            # Same student ID or same name
+            if student_id1 and student_id2 and student_id1 == student_id2:
+                print(f"      🎯 MATCH: Same Student ID for grades ({student_id1})")
+                return True
+            if student_name1 and student_name2 and student_name1 == student_name2:
+                print(f"      🎯 MATCH: Same Student Name for grades ({student_name1})")
+                return True
     
         return False
-    
     
     def get_entity_name_for_display(self, metadata, data_type):
         """Get the main identifier for display purposes"""
@@ -2992,8 +4346,14 @@ class SmartStudentDataSystem:
                 return f"{program} Curriculum ({dept})"
             return f"{program} Curriculum"
         
+        elif data_type == 'student_grades':
+            student_name = metadata.get('student_name', 'Unknown Student')
+            student_number = metadata.get('student_number', '')
+            if student_number:
+                return f"{student_name} (ID: {student_number}) - Grades"
+            return f"{student_name} - Grades"
+        
         return 'Unknown Entity'
-    
         
     def is_duplicate_record(self, new_metadata, existing_metadata, new_data, existing_doc, data_type):
         """Enhanced duplicate checking with multiple strategies"""
@@ -3173,8 +4533,17 @@ class SmartStudentDataSystem:
                 extracted_data = self.extract_teaching_faculty_schedule_info_smart(filename)
             elif data_type == 'non_teaching_faculty_schedule':
                 extracted_data = self.extract_non_teaching_faculty_schedule_info_smart(filename)
-            elif data_type == 'curriculum':  # ADD THIS CASE
+            elif data_type == 'curriculum':
                 extracted_data = self.extract_curriculum_excel_info_smart(filename)
+            elif data_type == 'student_grades':
+                extracted_data = self.extract_student_grades_excel_info_smart(filename)
+            elif data_type == 'student_cor_schedule':
+                extracted_data = self.extract_student_cor_pdf_info(filename)
+            elif data_type == 'teaching_faculty_resume_pdf':
+                extracted_data = self.extract_teaching_faculty_resume_pdf_info(filename)
+            # ADD THIS NEW CASE:
+            elif data_type == 'non_teaching_faculty_resume_pdf':
+                extracted_data = self.extract_non_teaching_faculty_resume_pdf_info(filename)
             else:
                 print(f"❌ Unknown data type: {data_type}")
                 return False
@@ -3201,49 +4570,123 @@ class SmartStudentDataSystem:
             return False
     
     def extract_student_data_for_duplicate_check(self, filename):
-        """Extract student data specifically for duplicate checking"""
-        try:
-            # Try structured first
-            df = pd.read_excel(filename)
-            if self.is_structured_student_data(df):
-                # Extract first student record for checking
-                df = pd.read_excel(filename)
-                if len(df) > 0:
-                    first_row = df.iloc[0]
-                    return {
-                        'student_id': str(first_row.get('Student ID', first_row.get('ID', ''))),
-                        'full_name': str(first_row.get('Full Name', first_row.get('Name', ''))),
-                        'surname': str(first_row.get('Surname', '')),
-                        'first_name': str(first_row.get('First Name', '')),
-                        'course': str(first_row.get('Course', '')),
-                        'year_level': str(first_row.get('Year', first_row.get('Year Level', ''))),
-                        'section': str(first_row.get('Section', '')),
-                    }
-            else:
-                # Try unstructured extraction
-                xl_file = pd.ExcelFile(filename)
-                all_text = ""
-                for sheet_name in xl_file.sheet_names:
-                    df = pd.read_excel(filename, sheet_name=sheet_name, header=None)
-                    for row in df.values:
-                        row_text = ' '.join([str(cell) for cell in row if pd.notna(cell)])
-                        all_text += row_text + "\n"
+        """Enhanced extraction for duplicate checking with better error handling"""
+        try:    
+            file_extension = os.path.splitext(filename)[1].lower()
+            
+            if file_extension == '.pdf':
+                print(f"🔍 Extracting from PDF for duplicate check...")
                 
-                # Extract first student record
+                # Check if it's a Student COR PDF first
+                if self.is_student_cor_pdf(filename):
+                    print(f"🔍 Processing as Student COR PDF for duplicate check...")
+                    return self.extract_student_cor_pdf_info(filename)
+                
+                # NEW: Check if it's a Teaching Faculty Resume PDF
+                elif self.is_teaching_faculty_resume_pdf(filename):
+                    print(f"🔍 Processing as Teaching Faculty Resume PDF for duplicate check...")
+                    return self.extract_teaching_faculty_resume_pdf_info(filename)
+                
+                # Extract text from PDF for regular student data
+                doc = fitz.open(filename)
+                all_text = ""
+                for page in doc:
+                    all_text += page.get_text() + "\n"
+                doc.close()
+                
+                # Split into records and extract first one
                 student_records = self.split_into_student_records(all_text)
-                if student_records:
-                    return self.extract_universal_student_data(student_records[0], 'excel_unstructured')
-            
-            return None
-            
+                if student_records and len(student_records) > 0:
+                    # Extract data from first record with error handling
+                    try:
+                        student_data = self.extract_universal_student_data_pdf(student_records[0], 'pdf')
+                        
+                        # Ensure all required fields exist
+                        safe_data = {
+                            'student_id': student_data.get('student_id', ''),
+                            'full_name': student_data.get('full_name', ''),
+                            'surname': student_data.get('surname', ''),
+                            'first_name': student_data.get('first_name', ''),
+                            'course': student_data.get('course', ''),
+                            'year_level': student_data.get('year', ''),
+                            'section': student_data.get('section', ''),
+                        }
+                        
+                        print(f"✅ Extracted data for duplicate check: {safe_data.get('full_name', 'Unknown')}")
+                        return safe_data
+                        
+                    except Exception as extract_error:
+                        print(f"❌ Error extracting from first record: {extract_error}")
+                        return None
+                else:
+                    print(f"❌ No student records found in PDF")
+                    return None
+                    
+            elif file_extension == '.xlsx':
+                # Handle Excel files (existing logic)
+                df_check = pd.read_excel(filename, header=None)
+                if self.is_student_grades_excel(df_check, silent=True):
+                    print(f"🔍 Extracting from Student Grades Excel for duplicate check...")
+                    return self.extract_student_grades_excel_info_smart(filename)
+                
+                # Handle regular student Excel files (existing logic)
+                df = pd.read_excel(filename)
+                if self.is_structured_student_data(df):
+                    if len(df) > 0:
+                        first_row = df.iloc[0]
+                        return {
+                            'student_id': str(first_row.get('Student ID', first_row.get('ID', ''))),
+                            'full_name': str(first_row.get('Full Name', first_row.get('Name', ''))),
+                            'surname': str(first_row.get('Surname', '')),
+                            'first_name': str(first_row.get('First Name', '')),
+                            'course': str(first_row.get('Course', '')),
+                            'year_level': str(first_row.get('Year', first_row.get('Year Level', ''))),
+                            'section': str(first_row.get('Section', '')),
+                        }
+                else:
+                    # Try unstructured extraction with error handling
+                    try:
+                        xl_file = pd.ExcelFile(filename)
+                        all_text = ""
+                        for sheet_name in xl_file.sheet_names:
+                            df = pd.read_excel(filename, sheet_name=sheet_name, header=None)
+                            for row in df.values:
+                                row_text = ' '.join([str(cell) for cell in row if pd.notna(cell)])
+                                all_text += row_text + "\n"
+                        
+                        # Extract first student record
+                        student_records = self.split_into_student_records(all_text)
+                        if student_records:
+                            student_data = self.extract_universal_student_data(student_records[0], 'excel_unstructured')
+                            # Ensure safe return
+                            return {
+                                'student_id': student_data.get('student_id', ''),
+                                'full_name': student_data.get('full_name', ''),
+                                'surname': student_data.get('surname', ''),
+                                'first_name': student_data.get('first_name', ''),
+                                'course': student_data.get('course', ''),
+                                'year_level': student_data.get('year', ''),
+                                'section': student_data.get('section', ''),
+                            }
+                    except Exception as excel_error:
+                        print(f"❌ Error in unstructured Excel extraction: {excel_error}")
+                        return None
+                    
+                return None
+            else:
+                print(f"❌ Unsupported file type: {file_extension}")
+                return None
+                
         except Exception as e:
             print(f"❌ Error extracting student data for duplicate check: {e}")
+            import traceback
+            traceback.print_exc()
             return None
 
     def create_metadata_for_duplicate_check(self, extracted_data, data_type):
         """Create standardized metadata for duplicate checking"""
         try:
-            print(f"🔍 Creating metadata for {data_type} duplicate check...")
+            print(f"📊 Creating metadata for {data_type} duplicate check...")
             
             if data_type == 'student':
                 metadata = {
@@ -3279,6 +4722,63 @@ class SmartStudentDataSystem:
                 
                 print(f"   📊 Faculty: {metadata['full_name']} in {metadata['department']}")
                 return metadata
+            
+            # ADD THIS NEW CASE FOR NON-TEACHING FACULTY RESUME PDF:
+            elif data_type == 'non_teaching_faculty_resume_pdf':
+                full_name = ""
+                if extracted_data.get('surname') and extracted_data.get('first_name'):
+                    full_name = f"{extracted_data['surname']}, {extracted_data['first_name']}"
+                elif extracted_data.get('full_name'):
+                    full_name = extracted_data['full_name']
+                
+                # Infer department from position if not provided
+                department = extracted_data.get('department', '')
+                if not department and extracted_data.get('position'):
+                    department = self.infer_non_teaching_department_from_position(extracted_data['position'])
+                if not department:
+                    department = 'ADMIN_SUPPORT'
+                
+                metadata = {
+                    'full_name': full_name.strip(),
+                    'surname': str(extracted_data.get('surname', '')).strip(),
+                    'first_name': str(extracted_data.get('first_name', '')).strip(),
+                    'department': str(department).strip().upper(),
+                    'position': str(extracted_data.get('position', '')).strip(),
+                    'email': str(extracted_data.get('email', '')).strip().lower(),
+                    'phone': str(extracted_data.get('phone', '')).strip(),
+                    'address': str(extracted_data.get('address', '')).strip(),
+                    'data_type': 'non_teaching_faculty_resume_pdf'
+                }
+                print(f"   📊 Non-Teaching Faculty Resume: {metadata['full_name']} - {metadata['position']} ({metadata['department']})")
+                return metadata
+            
+            elif data_type == 'teaching_faculty_resume_pdf':
+                full_name = ""
+                if extracted_data.get('surname') and extracted_data.get('first_name'):
+                    full_name = f"{extracted_data['surname']}, {extracted_data['first_name']}"
+                elif extracted_data.get('full_name'):
+                    full_name = extracted_data['full_name']
+                
+                # Infer department from position if not provided
+                department = extracted_data.get('department', '')
+                if not department and extracted_data.get('position'):
+                    department = self.infer_department_from_position(extracted_data['position'])
+                if not department:
+                    department = 'UNKNOWN'
+                
+                metadata = {
+                    'full_name': full_name.strip(),
+                    'surname': str(extracted_data.get('surname', '')).strip(),
+                    'first_name': str(extracted_data.get('first_name', '')).strip(),
+                    'department': str(department).strip().upper(),
+                    'position': str(extracted_data.get('position', '')).strip(),
+                    'email': str(extracted_data.get('email', '')).strip().lower(),
+                    'phone': str(extracted_data.get('phone', '')).strip(),
+                    'address': str(extracted_data.get('address', '')).strip(),
+                    'data_type': 'teaching_faculty_resume_pdf'
+                }
+                print(f"   📊 Faculty Resume: {metadata['full_name']} - {metadata['position']} ({metadata['department']})")
+                return metadata
                 
             elif data_type == 'cor_schedule':
                 metadata = {
@@ -3289,6 +4789,19 @@ class SmartStudentDataSystem:
                     'data_type': 'cor_schedule'
                 }
                 print(f"   📊 COR: {metadata['course']} Year {metadata['year_level']} Section {metadata['section']}")
+                return metadata
+                
+            # ADD THIS NEW CASE FOR STUDENT COR SCHEDULE
+            elif data_type == 'student_cor_schedule':
+                metadata = {
+                    'course': str(extracted_data['program_info'].get('Program', '')).strip().upper(),
+                    'year_level': str(extracted_data['program_info'].get('Year Level', '')).strip(),
+                    'section': str(extracted_data['program_info'].get('Section', '')).strip().upper(),
+                    'adviser': str(extracted_data['program_info'].get('Adviser', '')).strip(),
+                    'total_subjects': len(extracted_data.get('schedule', [])),
+                    'data_type': 'student_cor_schedule'
+                }
+                print(f"   📊 Student COR: {metadata['course']} Year {metadata['year_level']} Section {metadata['section']} ({metadata['total_subjects']} subjects)")
                 return metadata
                 
             elif data_type in ['teaching_faculty_schedule', 'non_teaching_faculty_schedule']:
@@ -3318,7 +4831,19 @@ class SmartStudentDataSystem:
                 }
                 print(f"   📊 Curriculum: {metadata['program']} in {metadata['department']} ({metadata['total_subjects']} subjects)")
                 return metadata
-                
+            
+            elif data_type == 'student_grades':
+                metadata = {
+                    'student_number': str(extracted_data['student_info'].get('student_number', '')).strip(),
+                    'student_name': str(extracted_data['student_info'].get('student_name', '')).strip(),
+                    'course': str(extracted_data['student_info'].get('course', '')).strip().upper(),
+                    'total_subjects': len(extracted_data.get('grades', [])),
+                    'gwa': str(extracted_data['student_info'].get('gwa', '')).strip(),
+                    'data_type': 'student_grades'
+                }
+                print(f"   📊 Student Grades: {metadata['student_name']} ({metadata['course']}) - {metadata['total_subjects']} subjects")
+                return metadata
+            
             else:
                 print(f"   ⚠️ Unknown data type: {data_type}")
                 return {'data_type': data_type}
@@ -3351,16 +4876,24 @@ class SmartStudentDataSystem:
                     return self.process_non_teaching_faculty_schedule_excel(filename)
                 elif data_type == 'student':
                     return self.process_student_excel(filename)
+                elif data_type == 'student_grades':
+                    return self.process_student_grades_excel(filename)
                 else:
                     return self.process_student_excel(filename)  # Default fallback
                     
             elif ext == ".pdf":
-                if data_type == 'curriculum':
-                    # Curriculum PDFs would need separate handling if needed
+                if data_type == 'student_cor_schedule':
+                    return self.process_student_cor_pdf(filename)
+                elif data_type == 'curriculum':
                     print("📄 Curriculum PDF processing not implemented yet")
                     return False
                 elif data_type == 'cor_schedule':
                     return self.process_cor_pdf(filename)
+                elif data_type == 'teaching_faculty_resume_pdf':
+                    return self.process_teaching_faculty_resume_pdf(filename)
+                # ADD THIS NEW CASE:
+                elif data_type == 'non_teaching_faculty_resume_pdf':
+                    return self.process_non_teaching_faculty_resume_pdf(filename)
                 elif data_type in ['teaching_faculty', 'admin', 'non_teaching_faculty']:
                     return self.process_faculty_pdf(filename)
                 elif data_type in ['teaching_faculty_schedule', 'non_teaching_faculty_schedule']:
@@ -3529,6 +5062,22 @@ class SmartStudentDataSystem:
                     print(f"   Year Level: {data.get('year_level', 'N/A')}")
                     print(f"   Section: {data.get('section', 'N/A')}")
                     print(f"   Adviser: {data.get('adviser', 'N/A')}")
+            
+            elif data_type == 'student_grades':
+                if isinstance(data, dict) and 'student_info' in data:
+                    student_info = data['student_info']
+                    grades = data.get('grades', [])
+                    print(f"   Student Number: {student_info.get('student_number', 'N/A')}")
+                    print(f"   Student Name: {student_info.get('student_name', 'N/A')}")
+                    print(f"   Course: {student_info.get('course', 'N/A')}")
+                    print(f"   GWA: {student_info.get('gwa', 'N/A')}")
+                    print(f"   Total Subjects: {len(grades)}")
+                else:
+                    print(f"   Student Number: {data.get('student_number', 'N/A')}")
+                    print(f"   Student Name: {data.get('student_name', 'N/A')}")
+                    print(f"   Course: {data.get('course', 'N/A')}")
+                    print(f"   GWA: {data.get('gwa', 'N/A')}")
+                    print(f"   Total Subjects: {data.get('total_subjects', 'N/A')}")
                     
             elif data_type in ['teaching_faculty_schedule', 'non_teaching_faculty_schedule']:
                 name_field = 'adviser_name' if data_type == 'teaching_faculty_schedule' else 'staff_name'
@@ -3845,7 +5394,496 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
             metadata['year_level'] = 0
 
         return metadata
+    
+    def is_non_teaching_faculty_resume_pdf(self, filename):
+        """Check if PDF is a Non-Teaching Faculty Resume file - ENHANCED detection"""
+        try:
+            doc = fitz.open(filename)
+            first_page = doc[0].get_text().lower()
+            doc.close()
+            
+            # Resume/CV indicators
+            resume_indicators = [
+                "resume", "curriculum vitae", "cv", "professional profile",
+                "qualifications", "background", "experience"
+            ]
+            
+            # ENHANCED Non-teaching position indicators
+            non_teaching_positions = [
+                "registrar", "accounting", "accountant", "guidance", "counselor", 
+                "library", "librarian", "health", "nurse", "maintenance", "custodial",
+                "security", "guard", "system admin", "it support", "administrative",
+                "secretary", "assistant", "clerk", "janitor", "cashier", "treasurer",
+                "facilities", "building maintenance", "custodial services",
+                "preventive maintenance", "hvac", "electrical", "plumbing",
+                "equipment maintenance", "technical support", "network admin"
+            ]
+            
+            # ENHANCED Administrative/support context indicators
+            admin_context = [
+                "office", "department", "services", "support", "administration",
+                "staff", "employee", "personnel", "non-teaching", "administrative",
+                "maintenance", "facilities", "building", "campus", "operations",
+                "repairs", "upkeep", "supervision", "district", "school district"
+            ]
+            
+            # Professional certifications that indicate non-teaching roles
+            non_teaching_certs = [
+                "epa", "osha", "cmt certified", "electrical safety", "hvac cert",
+                "building maintenance", "facilities management", "safety cert"
+            ]
+            
+            has_resume_indicator = any(indicator in first_page for indicator in resume_indicators)
+            has_non_teaching_position = any(pos in first_page for pos in non_teaching_positions)
+            has_admin_context = any(context in first_page for context in admin_context)
+            has_non_teaching_certs = any(cert in first_page for cert in non_teaching_certs)
+            
+            # Should NOT have teaching indicators (academic focus)
+            teaching_indicators = [
+                "professor", "instructor", "lecturer", "teacher", "faculty adviser",
+                "teaching experience", "academic experience", "research", "publications",
+                "curriculum development", "classroom", "students", "courses taught"
+            ]
+            has_teaching_indicator = any(indicator in first_page for indicator in teaching_indicators)
+            
+            # Should NOT have student data
+            student_indicators = ["student id", "year level", "course section", "guardian"]
+            has_student_indicator = any(indicator in first_page for indicator in student_indicators)
+            
+            # ENHANCED LOGIC: Strong indicators for non-teaching
+            is_non_teaching_resume = (
+                has_resume_indicator and
+                (has_non_teaching_position or has_admin_context or has_non_teaching_certs) and
+                not has_teaching_indicator and
+                not has_student_indicator
+            )
+            
+            print(f"📄 Non-Teaching Faculty Resume PDF detection for {filename}:")
+            print(f"   Resume indicator: {has_resume_indicator}")
+            print(f"   Non-teaching position: {has_non_teaching_position}")
+            print(f"   Admin context: {has_admin_context}")
+            print(f"   Non-teaching certs: {has_non_teaching_certs}")
+            print(f"   Teaching indicator: {has_teaching_indicator}")
+            print(f"   Final result: {is_non_teaching_resume}")
+            
+            return is_non_teaching_resume
+            
+        except Exception as e:
+            print(f"❌ Error checking Non-Teaching Faculty Resume PDF: {e}")
+            return False
+    
+    def extract_non_teaching_faculty_resume_pdf_info(self, filename):
+        """Extract Non-Teaching Faculty Resume information from PDF"""
+        try:
+            doc = fitz.open(filename)
+            full_text = ""
+            for page in doc:
+                full_text += page.get_text() + "\n"
+            doc.close()
+            
+            print(f"📋 Extracting Non-Teaching Faculty Resume from PDF: {filename}")
+            
+            # Extract non-teaching faculty resume data
+            faculty_data = self.extract_universal_non_teaching_faculty_resume_data(full_text)
+            
+            print(f"📋 Extracted Non-Teaching Faculty Resume Data: {faculty_data}")
+            return faculty_data
+            
+        except Exception as e:
+            print(f"❌ Error extracting Non-Teaching Faculty Resume PDF: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
+        
+    def extract_universal_non_teaching_faculty_resume_data(self, text_content):
+        """ENHANCED: Universal extractor for non-teaching faculty resume data from PDF"""
+        lines = [line.strip() for line in text_content.split('\n') if line.strip()]
+        all_text = ' '.join(lines).upper()
+        
+        # Initialize faculty data with required fields
+        faculty_data = {
+            'surname': None,
+            'first_name': None,
+            'position': None,
+            'email': None,
+            'phone': None,
+            'address': None,
+            'education': None,
+            'professional_experience': None,
+            'certifications': None,
+            'department': None
+        }
+        
+        print(f"🔍 Processing non-teaching resume text of {len(lines)} lines...")
+        
+        # Extract name from header
+        faculty_data['surname'], faculty_data['first_name'] = self.extract_name_from_resume_header(lines)
+        
+        # ENHANCED patterns for non-teaching resume extraction
+        patterns = {
+            'email': [
+                r'([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,})',
+                r'EMAIL[:\s]*([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,})',
+                r'E-MAIL[:\s]*([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,})',
+            ],
+            'phone': [
+                r'PHONE[:\s]*([\d\-\(\)\s]{10,})',
+                r'MOBILE[:\s]*([\d\-\(\)\s]{10,})',
+                r'CONTACT[:\s]*([\d\-\(\)\s]{10,})',
+                r'\((\d{3})\)\s*(\d{3})-(\d{4})',
+                r'(\d{3})-(\d{3})-(\d{4})',
+                r'(\+63\d{10}|09\d{9}|\d{11})',
+            ],
+            'position': [
+                r'(?:POSITION|TITLE|ROLE|JOB TITLE)[:\s]*([A-Za-z\s\.,&-]+?)(?:\n|$|EMAIL|PHONE)',
+                # ENHANCED: Better position detection for non-teaching roles
+                r'(?:LEAD\s+MAINTENANCE\s+TECH|MAINTENANCE\s+TECH|MAINTENANCE\s+ASSISTANT)',
+                r'(?:REGISTRAR|ACCOUNTANT|LIBRARIAN|SECRETARY|ASSISTANT|CLERK|COORDINATOR|OFFICER|SPECIALIST)',
+                r'(?:CUSTODIAL\s+SUPERVISOR|FACILITIES\s+MANAGER|BUILDING\s+SUPERVISOR)',
+            ],
+        }
+        
+        # Extract basic information using patterns
+        for field, field_patterns in patterns.items():
+            if faculty_data.get(field):
+                continue
+            
+            for pattern in field_patterns:
+                matches = re.findall(pattern, all_text, re.IGNORECASE | re.MULTILINE)
+                if matches:
+                    extracted_value = matches[0]
+                    if isinstance(extracted_value, tuple):
+                        if field == 'phone':
+                            extracted_value = ''.join(extracted_value)
+                        else:
+                            extracted_value = next((v for v in reversed(extracted_value) if v), '')
+                    
+                    cleaned_value = self.clean_non_teaching_faculty_resume_value(extracted_value.strip(), field)
+                    if cleaned_value:
+                        faculty_data[field] = cleaned_value
+                        print(f"   🎯 Found {field}: {cleaned_value}")
+                        break
+        
+        # Extract address
+        if not faculty_data.get('address'):
+            faculty_data['address'] = self.extract_clean_address(lines)
+        
+        # Extract complex sections
+        faculty_data['education'] = self.extract_education_section(lines)
+        faculty_data['professional_experience'] = self.extract_non_teaching_experience_section(lines)
+        faculty_data['certifications'] = self.extract_certifications_section(lines)
+        
+        # ENHANCED: Infer department from position and experience
+        try:
+            if faculty_data.get('position') or faculty_data.get('professional_experience') or faculty_data.get('certifications'):
+                inferred_dept = self.infer_non_teaching_department_from_resume_content(faculty_data)
+                if inferred_dept:
+                    faculty_data['department'] = inferred_dept
+                    print(f"   🎯 Inferred department: {inferred_dept}")
+            else:
+                # Fallback based on content analysis
+                if any(term in all_text for term in ['MAINTENANCE', 'BUILDING', 'FACILITIES', 'HVAC', 'REPAIRS']):
+                    faculty_data['department'] = 'MAINTENANCE_CUSTODIAL'
+                    print(f"   🎯 Fallback department: MAINTENANCE_CUSTODIAL")
+        except Exception as e:
+            print(f"   ⚠️ Error in department inference: {e}")
+            faculty_data['department'] = 'MAINTENANCE_CUSTODIAL'  # Default based on example
+        
+        # Fuzzy extraction for missing critical fields
+        for field in ['surname', 'first_name', 'position']:
+            if not faculty_data.get(field):
+                fuzzy_value = self.fuzzy_field_extraction_resume(lines, field)
+                if fuzzy_value:
+                    faculty_data[field] = fuzzy_value
+                    print(f"   🔍 Fuzzy found {field}: {fuzzy_value}")
+        
+        # Extract name from email if still missing
+        if not faculty_data.get('surname') and not faculty_data.get('first_name') and faculty_data.get('email'):
+            email_name = self.extract_name_from_email(faculty_data['email'])
+            if email_name:
+                faculty_data['surname'], faculty_data['first_name'] = email_name
+                print(f"   🔍 Extracted name from email: {faculty_data['surname']}, {faculty_data['first_name']}")
+        
+        # ENHANCED: Extract position from professional experience if missing
+        if not faculty_data.get('position') and faculty_data.get('professional_experience'):
+            position_from_exp = self.extract_position_from_experience(faculty_data['professional_experience'])
+            if position_from_exp:
+                faculty_data['position'] = position_from_exp
+                print(f"   🔍 Extracted position from experience: {position_from_exp}")
+        
+        # Ensure all fields are strings
+        for key, value in faculty_data.items():
+            if value is None:
+                faculty_data[key] = ''
+            elif not isinstance(value, str):
+                faculty_data[key] = str(value)
+        
+        return faculty_data
+    
+    def extract_position_from_experience(self, experience_text):
+        """Extract position/title from professional experience section"""
+        if not experience_text:
+            return None
+        
+        lines = experience_text.split('\n')
+        
+        # Look for job titles in the experience section
+        position_patterns = [
+            r'^(Lead\s+Maintenance\s+Tech|Maintenance\s+Tech|Maintenance\s+Assistant)',
+            r'^(Custodial\s+Supervisor|Facilities\s+Manager|Building\s+Supervisor)',
+            r'^(Administrative\s+Assistant|Secretary|Clerk|Assistant)',
+            r'^(Registrar|Accountant|Librarian|Nurse)',
+            r'^([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+Tech|\s+Assistant|\s+Supervisor|\s+Manager|\s+Specialist))',
+        ]
+        
+        for line in lines[:5]:  # Check first 5 lines of experience
+            line = line.strip()
+            if line:
+                for pattern in position_patterns:
+                    match = re.search(pattern, line, re.IGNORECASE)
+                    if match:
+                        position = match.group(1).title()
+                        print(f"   🎯 Extracted position from experience: {position}")
+                        return position
+        
+        return None
 
+    def clean_non_teaching_faculty_resume_value(self, value, field_type):
+        """Clean extracted values for non-teaching faculty resume"""
+        if not value or len(value.strip()) == 0:
+            return None
+        
+        value = value.strip()
+        
+        if field_type == 'position':
+            # Clean position/title for non-teaching staff
+            cleaned = re.sub(r'[^A-Za-z\s\&\-]', '', value)
+            cleaned = re.sub(r'\s{2,}', ' ', cleaned).strip().title()
+            
+            # Remove duplicate words
+            words = cleaned.split()
+            unique_words = []
+            for word in words:
+                if not unique_words or word.lower() != unique_words[-1].lower():
+                    unique_words.append(word)
+            cleaned = ' '.join(unique_words)
+            
+            # Non-teaching position standardization
+            position_mapping = {
+                'Admin': 'Administrative Assistant',
+                'Sec': 'Secretary',
+                'Asst': 'Assistant',
+                'Coord': 'Coordinator',
+                'Spec': 'Specialist'
+            }
+            
+            for short, full in position_mapping.items():
+                if short in cleaned:
+                    cleaned = cleaned.replace(short, full)
+            
+            return cleaned if len(cleaned) > 2 else None
+        
+        elif field_type == 'phone':
+            # Same phone cleaning as teaching faculty
+            cleaned = re.sub(r'[^\d]', '', value)
+            if 10 <= len(cleaned) <= 15:
+                if len(cleaned) == 10:
+                    return f"({cleaned[:3]}) {cleaned[3:6]}-{cleaned[6:]}"
+                elif len(cleaned) == 11 and cleaned.startswith('1'):
+                    return f"({cleaned[1:4]}) {cleaned[4:7]}-{cleaned[7:]}"
+                else:
+                    return cleaned
+            return None
+        
+        elif field_type == 'email':
+            email_match = re.search(r'([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,})', value)
+            return email_match.group(1).lower() if email_match else None
+        
+        return value
+    
+    def extract_non_teaching_experience_section(self, lines):
+        """Extract non-teaching professional experience information from resume"""
+        experience_text = ""
+        in_experience_section = False
+        
+        section_headers = [
+            'EXPERIENCE', 'PROFESSIONAL EXPERIENCE', 'WORK HISTORY', 'EMPLOYMENT', 
+            'CAREER', 'WORK EXPERIENCE', 'ADMINISTRATIVE EXPERIENCE', 'OFFICE EXPERIENCE'
+        ]
+        end_sections = [
+            'EDUCATION', 'CERTIFICATIONS', 'SKILLS', 'REFERENCES', 'PERSONAL INFORMATION'
+        ]
+        
+        for line in lines:
+            line_upper = line.upper().strip()
+            
+            # Check if we're starting experience section
+            if any(header in line_upper for header in section_headers):
+                in_experience_section = True
+                continue
+            
+            # Check if we're ending experience section
+            if in_experience_section and any(end_section in line_upper for end_section in end_sections):
+                break
+            
+            # Collect experience content
+            if in_experience_section and line.strip():
+                experience_text += line + "\n"
+        
+        return experience_text.strip() if experience_text.strip() else None
+    
+    def infer_non_teaching_department_from_resume_content(self, faculty_data):
+        """ENHANCED: Infer non-teaching department from resume content"""
+        # Fix: Handle None values properly
+        position = faculty_data.get('position') or ''
+        experience = faculty_data.get('professional_experience') or ''
+        education = faculty_data.get('education') or ''
+        certifications = faculty_data.get('certifications') or ''
+        
+        # Convert to uppercase safely
+        position = position.upper() if position else ''
+        experience = experience.upper() if experience else ''
+        education = education.upper() if education else ''
+        certifications = certifications.upper() if certifications else ''
+        
+        all_content = f"{position} {experience} {education} {certifications}"
+        
+        # ENHANCED Non-teaching department detection with more keywords
+        if any(term in all_content for term in ['MAINTENANCE', 'CUSTODIAL', 'JANITOR', 'CLEANER', 'FACILITIES', 'BUILDING', 'HVAC', 'ELECTRICAL', 'PLUMBING', 'REPAIRS', 'PREVENTIVE MAINTENANCE']):
+            return 'MAINTENANCE_CUSTODIAL'
+        elif any(term in all_content for term in ['REGISTRAR', 'REGISTRATION', 'RECORDS', 'ENROLLMENT']):
+            return 'REGISTRAR'
+        elif any(term in all_content for term in ['ACCOUNTING', 'ACCOUNTANT', 'FINANCE', 'CASHIER', 'TREASURER', 'BUDGET']):
+            return 'ACCOUNTING'
+        elif any(term in all_content for term in ['GUIDANCE', 'COUNSELOR', 'COUNSELLING', 'STUDENT AFFAIRS']):
+            return 'GUIDANCE'
+        elif any(term in all_content for term in ['LIBRARY', 'LIBRARIAN', 'INFORMATION SERVICES']):
+            return 'LIBRARY'
+        elif any(term in all_content for term in ['HEALTH', 'NURSE', 'MEDICAL', 'CLINIC', 'FIRST AID']):
+            return 'HEALTH_SERVICES'
+        elif any(term in all_content for term in ['SECURITY', 'GUARD', 'SAFETY']):
+            return 'SECURITY'
+        elif any(term in all_content for term in ['SYSTEM ADMIN', 'IT SUPPORT', 'NETWORK', 'COMPUTER TECHNICIAN', 'TECHNICAL', 'IT SERVICES']):
+            return 'SYSTEM_ADMIN'
+        elif any(term in all_content for term in ['ADMIN', 'ADMINISTRATIVE', 'SECRETARY', 'ASSISTANT', 'CLERK', 'OFFICE']):
+            return 'ADMIN_SUPPORT'
+        
+        return 'MAINTENANCE_CUSTODIAL' 
+    
+    def process_non_teaching_faculty_resume_pdf(self, filename):
+        """Process Non-Teaching Faculty Resume PDF file"""
+        try:
+            faculty_data = self.extract_non_teaching_faculty_resume_pdf_info(filename)
+            if not faculty_data:
+                print("❌ Could not extract non-teaching faculty resume data from PDF")
+                return False
+            
+            # Enhanced department inference
+            department = faculty_data.get('department', '')
+            
+            if not department or department in ['N/A', 'NA', '']:
+                if faculty_data.get('position'):
+                    department = self.infer_non_teaching_department_from_position(faculty_data['position'])
+            
+            if not department or department in ['N/A', 'NA', '']:
+                department = 'ADMIN_SUPPORT'  # Default for non-teaching
+            
+            formatted_text = self.format_non_teaching_faculty_resume_enhanced(faculty_data)
+            
+            # Enhanced name handling
+            full_name = ""
+            if faculty_data.get('surname') and faculty_data.get('first_name'):
+                full_name = f"{faculty_data['surname']}, {faculty_data['first_name']}"
+            elif faculty_data.get('surname'):
+                full_name = faculty_data['surname']
+            elif faculty_data.get('first_name'):
+                full_name = faculty_data['first_name']
+            elif faculty_data.get('email'):
+                email_username = faculty_data['email'].split('@')[0] if '@' in faculty_data['email'] else ''
+                full_name = email_username.capitalize() if email_username else "Unknown Staff"
+            else:
+                full_name = "Unknown Staff"
+            
+            metadata = {
+                'full_name': full_name,
+                'surname': faculty_data.get('surname') or '',
+                'first_name': faculty_data.get('first_name') or '',
+                'department': self.standardize_non_teaching_department_name(department),
+                'position': faculty_data.get('position') or '',
+                'email': faculty_data.get('email') or '',
+                'phone': faculty_data.get('phone') or '',
+                'address': faculty_data.get('address') or '',
+                'data_type': 'non_teaching_faculty_resume_pdf',
+                'faculty_type': 'non_teaching',
+            }
+            
+            # Store with hierarchy
+            collection_name = self.create_smart_collection_name('faculty', metadata)
+            collection = self.client.get_or_create_collection(
+                name=collection_name, 
+                embedding_function=self.embedding_function
+            )
+            
+            self.store_with_smart_metadata(collection, [formatted_text], [metadata])
+            self.collections[collection_name] = collection
+            
+            hierarchy_path = f"{self.get_non_teaching_department_display_name(metadata['department'])} > Non-Teaching Faculty"
+            print(f"✅ Loaded non-teaching faculty resume into: {collection_name}")
+            print(f"   📂 Hierarchy: {hierarchy_path}")
+            print(f"   👨‍💼 Staff: {metadata['full_name']} ({metadata['position']})")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error processing non-teaching faculty resume PDF: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+
+    def format_non_teaching_faculty_resume_enhanced(self, faculty_data):
+        """Enhanced non-teaching faculty resume formatting"""
+        
+        def format_field(value):
+            if value and value not in ['None', 'N/A', '']:
+                return value
+            return 'N/A'
+        
+        text = f"""NON-TEACHING FACULTY RESUME
+
+            PERSONAL INFORMATION:
+            Surname: {format_field(faculty_data.get('surname'))}
+            First Name: {format_field(faculty_data.get('first_name'))}
+            Position: {format_field(faculty_data.get('position'))}
+            Email: {format_field(faculty_data.get('email'))}
+            Phone: {format_field(faculty_data.get('phone'))}
+            Address: {format_field(faculty_data.get('address'))}
+            """
+        
+        # Add education section if available
+        education = faculty_data.get('education')
+        if education and education not in ['None', 'N/A', '']:
+            text += f"""
+            EDUCATIONAL BACKGROUND:
+            {education}
+            """
+        
+        # Add professional experience section if available
+        experience = faculty_data.get('professional_experience')
+        if experience and experience not in ['None', 'N/A', '']:
+            text += f"""
+            PROFESSIONAL EXPERIENCE:
+            {experience}
+            """
+        
+        # Add certifications section if available
+        certifications = faculty_data.get('certifications')
+        if certifications and certifications not in ['None', 'N/A', '']:
+            text += f"""
+            CERTIFICATIONS:
+            {certifications}
+            """
+        
+        return text.strip()
+    
     # ======================== COR PROCESSING ========================
     
     
@@ -4648,7 +6686,804 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
         print(f"✅ Loaded COR schedule into: {collection_name}")
         print(f"   📁 Hierarchy: {hierarchy_path}")
         return True
+    
+    # ======================== TEACHING FACULTY RESUME PDF PROCESSING ========================
+
+    def is_teaching_faculty_resume_pdf(self, filename):
+        """Check if PDF is a Teaching Faculty Resume file - ENHANCED to exclude non-teaching"""
+        try:
+            doc = fitz.open(filename)
+            first_page = doc[0].get_text().lower()
+            doc.close()
+            
+            # Teaching faculty resume specific indicators
+            resume_indicators = [
+                "resume", "curriculum vitae", "cv", "professional profile",
+                "qualifications", "academic background"
+            ]
+            
+            # Academic/Teaching context indicators - ENHANCED
+            teaching_indicators = [
+                "education", "teaching experience", "academic experience",
+                "professor", "instructor", "faculty", "lecturer", "teacher",
+                "university", "college", "school", "academic", "research",
+                "dean", "department chair", "curriculum", "classroom"
+            ]
+            
+            # NON-TEACHING exclusion indicators - NEW
+            non_teaching_indicators = [
+                "maintenance", "custodial", "janitor", "cleaner", "facilities",
+                "security", "guard", "registrar", "accounting", "accountant",
+                "librarian", "library", "health services", "nurse", "clinic",
+                "administrative assistant", "secretary", "clerk", "cashier",
+                "it support", "system admin", "network", "technical support",
+                "building maintenance", "preventive maintenance", "hvac",
+                "electrical", "plumbing", "repairs", "equipment maintenance"
+            ]
+            
+            # Professional structure indicators
+            structure_indicators = [
+                "experience", "employment", "work history", "career",
+                "certifications", "licenses", "qualifications",
+                "contact information", "personal information"
+            ]
+            
+            has_resume_indicator = any(indicator in first_page for indicator in resume_indicators)
+            has_teaching_context = any(indicator in first_page for indicator in teaching_indicators)
+            has_non_teaching_context = any(indicator in first_page for indicator in non_teaching_indicators)
+            has_professional_structure = any(indicator in first_page for indicator in structure_indicators)
+            
+            # Should NOT have student data indicators
+            student_indicators = ["student id", "year level", "course section", "guardian"]
+            has_student_indicator = any(indicator in first_page for indicator in student_indicators)
+            
+            # Should NOT have administrative schedule indicators
+            schedule_indicators = ["class schedule", "weekly schedule", "time table", "monday tuesday"]
+            has_schedule_indicator = any(indicator in first_page for indicator in schedule_indicators)
+            
+            # UPDATED LOGIC: Must have teaching context AND NOT have non-teaching context
+            is_faculty_resume = (
+                (has_resume_indicator or has_professional_structure) and
+                has_teaching_context and
+                not has_non_teaching_context and  # NEW: Exclude if non-teaching context found
+                not has_student_indicator and
+                not has_schedule_indicator
+            )
+            
+            print(f"📄 Teaching Faculty Resume PDF detection for {filename}:")
+            print(f"   Resume indicator: {has_resume_indicator}")
+            print(f"   Teaching context: {has_teaching_context}")
+            print(f"   Non-teaching context: {has_non_teaching_context}")  # NEW
+            print(f"   Professional structure: {has_professional_structure}")
+            print(f"   Final result: {is_faculty_resume}")
+            
+            return is_faculty_resume
+            
+        except Exception as e:
+            print(f"❌ Error checking Teaching Faculty Resume PDF: {e}")
+            return False
+        
+    def extract_teaching_faculty_resume_pdf_info(self, filename):
+        """Extract Teaching Faculty Resume information from PDF"""
+        try:
+            doc = fitz.open(filename)
+            full_text = ""
+            for page in doc:
+                full_text += page.get_text() + "\n"
+            doc.close()
+            
+            print(f"📋 Extracting Teaching Faculty Resume from PDF: {filename}")
+            
+            # Extract faculty resume data using universal extraction
+            faculty_data = self.extract_universal_teaching_faculty_resume_data(full_text)
+            
+            print(f"📋 Extracted Faculty Resume Data: {faculty_data}")
+            return faculty_data
+            
+        except Exception as e:
+            print(f"❌ Error extracting Teaching Faculty Resume PDF: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
    
+    def extract_universal_teaching_faculty_resume_data(self, text_content):
+        """Enhanced universal extractor for teaching faculty resume data from PDF"""
+        lines = [line.strip() for line in text_content.split('\n') if line.strip()]
+        all_text = ' '.join(lines).upper()
+        
+        # Initialize faculty data with required fields
+        faculty_data = {
+            'surname': None,
+            'first_name': None,
+            'position': None,
+            'email': None,
+            'phone': None,
+            'address': None,
+            'education': None,
+            'professional_experience': None,
+            'certifications': None,
+            'department': None
+        }
+        
+        print(f"🔍 Processing resume text of {len(lines)} lines...")
+        
+        # ENHANCED: First try to extract name from the very first lines
+        faculty_data['surname'], faculty_data['first_name'] = self.extract_name_from_resume_header(lines)
+        
+        # Enhanced patterns for PDF resume extraction
+        patterns = {
+            'email': [
+                r'([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,})',
+                r'EMAIL[:\s]*([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,})',
+                r'E-MAIL[:\s]*([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,})',
+            ],
+            'phone': [
+                r'PHONE[:\s]*([\d\-\(\)\s]{10,})',
+                r'MOBILE[:\s]*([\d\-\(\)\s]{10,})',
+                r'CONTACT[:\s]*([\d\-\(\)\s]{10,})',
+                r'\((\d{3})\)\s*(\d{3})-(\d{4})',
+                r'(\d{3})-(\d{3})-(\d{4})',
+                r'(\+63\d{10}|09\d{9}|\d{11})',
+            ],
+            'position': [
+                r'(?:POSITION|TITLE|ROLE)[:\s]*([A-Za-z\s\.,&-]+?)(?:\n|$|EMAIL|PHONE)',
+                r'(?:DEPARTMENT\s+)?(?:CHAIR|PROFESSOR|INSTRUCTOR|LECTURER|DEAN|FACULTY|TEACHER|COORDINATOR)',
+            ],
+        }
+        
+        # Extract basic information using patterns
+        for field, field_patterns in patterns.items():
+            if faculty_data.get(field):
+                continue
+            
+            for pattern in field_patterns:
+                matches = re.findall(pattern, all_text, re.IGNORECASE | re.MULTILINE)
+                if matches:
+                    extracted_value = matches[0]
+                    if isinstance(extracted_value, tuple):
+                        if field == 'phone':
+                            extracted_value = ''.join(extracted_value)
+                        else:
+                            extracted_value = next((v for v in reversed(extracted_value) if v), '')
+                    
+                    cleaned_value = self.clean_teaching_faculty_resume_value_enhanced(extracted_value.strip(), field)
+                    if cleaned_value:
+                        faculty_data[field] = cleaned_value
+                        print(f"   🎯 Found {field}: {cleaned_value}")
+                        break
+        
+        # ENHANCED: Extract address more carefully
+        if not faculty_data.get('address'):
+            faculty_data['address'] = self.extract_clean_address(lines)
+        
+        # Extract complex sections
+        faculty_data['education'] = self.extract_education_section(lines)
+        faculty_data['professional_experience'] = self.extract_experience_section(lines)
+        faculty_data['certifications'] = self.extract_certifications_section(lines)
+        
+        # ENHANCED: Infer department from position and experience - FIXED with error handling
+        try:
+            if faculty_data.get('position') or faculty_data.get('professional_experience'):
+                inferred_dept = self.infer_department_from_resume_content(faculty_data)
+                if inferred_dept:
+                    faculty_data['department'] = inferred_dept
+                    print(f"   🎯 Inferred department: {inferred_dept}")
+        except Exception as e:
+            print(f"   ⚠️ Error in department inference: {e}")
+            faculty_data['department'] = 'CAS'  # Default fallback
+        
+        # Fuzzy extraction for missing critical fields only
+        for field in ['surname', 'first_name', 'position']:
+            if not faculty_data.get(field):
+                fuzzy_value = self.fuzzy_field_extraction_resume(lines, field)
+                if fuzzy_value:
+                    faculty_data[field] = fuzzy_value
+                    print(f"   🔍 Fuzzy found {field}: {fuzzy_value}")
+        
+        # ENHANCED: If we still don't have names, try extracting from email
+        if not faculty_data.get('surname') and not faculty_data.get('first_name') and faculty_data.get('email'):
+            email_name = self.extract_name_from_email(faculty_data['email'])
+            if email_name:
+                faculty_data['surname'], faculty_data['first_name'] = email_name
+                print(f"   🔍 Extracted name from email: {faculty_data['surname']}, {faculty_data['first_name']}")
+        
+        # Ensure all fields are strings (not None)
+        for key, value in faculty_data.items():
+            if value is None:
+                faculty_data[key] = ''
+            elif not isinstance(value, str):
+                faculty_data[key] = str(value)
+        
+        return faculty_data
+    
+    def extract_name_from_email(self, email):
+        """Extract name from email address like xiaolongbao@example.com"""
+        if not email or '@' not in email:
+            return None, None
+        
+        try:
+            username = email.split('@')[0]
+            
+            # Pattern 1: firstname.lastname or firstname_lastname
+            if '.' in username or '_' in username:
+                separator = '.' if '.' in username else '_'
+                parts = username.split(separator)
+                if len(parts) >= 2:
+                    first_name = parts[0].capitalize()
+                    last_name = parts[-1].capitalize()
+                    print(f"   🎯 Extracted from email pattern 1: {first_name} {last_name}")
+                    return last_name, first_name
+            
+            # Pattern 2: firstnamelastname (like "xiaolongbao") - harder to split
+            elif len(username) > 3:
+                # For complex usernames, use as first name
+                first_name = username.capitalize()
+                print(f"   🎯 Extracted from email pattern 2: {first_name}")
+                return '', first_name
+                
+        except Exception as e:
+            print(f"   ⚠️ Error extracting name from email: {e}")
+        
+        return None, None
+    
+    def clean_teaching_faculty_resume_value_enhanced(self, value, field_type):
+        """Enhanced cleaning for resume field values"""
+        if not value or len(value.strip()) == 0:
+            return None
+        
+        value = value.strip()
+        
+        if field_type == 'position':
+            # Enhanced position cleaning - FIX: Remove duplicate "Department"
+            cleaned = re.sub(r'[^A-Za-z\s\&\-]', '', value)
+            cleaned = re.sub(r'\s{2,}', ' ', cleaned).strip().title()
+            
+            # Remove duplicate words (like "Department Department")
+            words = cleaned.split()
+            unique_words = []
+            for word in words:
+                if not unique_words or word.lower() != unique_words[-1].lower():
+                    unique_words.append(word)
+            cleaned = ' '.join(unique_words)
+            
+            # Common position standardization
+            position_mapping = {
+                'Chair': 'Department Chair',
+                'Prof': 'Professor',
+                'Assoc Prof': 'Associate Professor',
+                'Asst Prof': 'Assistant Professor',
+                'Inst': 'Instructor'
+            }
+            
+            for short, full in position_mapping.items():
+                if short in cleaned:
+                    cleaned = cleaned.replace(short, full)
+            
+            return cleaned if len(cleaned) > 2 else None
+        
+        elif field_type == 'phone':
+            # Enhanced phone cleaning
+            cleaned = re.sub(r'[^\d]', '', value)
+            if 10 <= len(cleaned) <= 15:
+                # Format US phone numbers
+                if len(cleaned) == 10:
+                    return f"({cleaned[:3]}) {cleaned[3:6]}-{cleaned[6:]}"
+                elif len(cleaned) == 11 and cleaned.startswith('1'):
+                    return f"({cleaned[1:4]}) {cleaned[4:7]}-{cleaned[7:]}"
+                else:
+                    return cleaned
+            return None
+        
+        elif field_type == 'email':
+            email_match = re.search(r'([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,})', value)
+            return email_match.group(1).lower() if email_match else None
+        
+        return value
+    
+    def infer_department_from_resume_content(self, faculty_data):
+        """Enhanced department inference from resume content"""
+        # Fix: Handle None values properly
+        position = faculty_data.get('position') or ''
+        experience = faculty_data.get('professional_experience') or ''
+        education = faculty_data.get('education') or ''
+        
+        # Convert to uppercase safely
+        position = position.upper() if position else ''
+        experience = experience.upper() if experience else ''
+        education = education.upper() if education else ''
+        
+        all_content = f"{position} {experience} {education}"
+        
+        # Enhanced department detection - MORE SPECIFIC for Mathematics
+        if any(term in all_content for term in ['MATHEMATICS', 'MATH', 'ALGEBRA', 'CALCULUS', 'GEOMETRY', 'STATISTICS']):
+            # Mathematics is typically under College of Arts & Sciences or separate Math Department
+            if any(term in all_content for term in ['DEPARTMENT CHAIR', 'MATH DEPARTMENT', 'MATHEMATICS DEPARTMENT']):
+                return 'CAS'  # Department chairs typically in Arts & Sciences
+            else:
+                return 'CAS'  # Math faculty under Arts & Sciences
+        elif any(term in all_content for term in ['COMPUTER', 'PROGRAMMING', 'SOFTWARE', 'TECH', 'IT', 'CODING']):
+            return 'CCS'
+        elif any(term in all_content for term in ['BUSINESS', 'ACCOUNTING', 'FINANCE', 'MARKETING', 'MANAGEMENT']):
+            return 'CBA'
+        elif any(term in all_content for term in ['HOSPITALITY', 'TOURISM', 'HOTEL', 'CULINARY']):
+            return 'CHTM'
+        elif any(term in all_content for term in ['EDUCATION', 'TEACHING', 'CURRICULUM', 'PEDAGOGY']):
+            return 'CTE'
+        elif any(term in all_content for term in ['ENGINEERING', 'MECHANICAL', 'ELECTRICAL', 'CIVIL']):
+            return 'COE'
+        elif any(term in all_content for term in ['NURSING', 'HEALTH', 'MEDICAL']):
+            return 'CON'
+        elif any(term in all_content for term in ['ENGLISH', 'LITERATURE', 'HISTORY', 'PSYCHOLOGY', 'SOCIOLOGY', 'SCIENCE', 'PHYSICS', 'CHEMISTRY', 'BIOLOGY']):
+            return 'CAS'  # Liberal Arts & Sciences subjects
+        elif any(term in all_content for term in ['CHAIR', 'DEPARTMENT']):
+            # If they're a department chair, try to infer which department
+            if 'MATH' in all_content or 'MATHEMATICS' in all_content:
+                return 'CAS'
+            elif 'COMPUTER' in all_content:
+                return 'CCS'
+            else:
+                return 'CAS'  # Default for academic department chairs
+        
+        return 'CAS'  # Default to College of Arts & Sciences for academic faculty
+    
+    def extract_name_from_resume_header(self, lines):
+        """Enhanced name extraction from resume header (first few lines)"""
+        # Most resumes start with the person's name in the first 1-5 lines
+        for i in range(min(7, len(lines))):  # Check first 7 lines instead of 5
+            line = lines[i].strip()
+            
+            # Skip obvious header content and email addresses
+            if any(skip in line.upper() for skip in ['RESUME', 'CV', 'CURRICULUM VITAE', 'EMAIL', 'PHONE', '@', 'LOCATION:', 'ADDRESS:']):
+                continue
+            
+            # Enhanced name patterns - more flexible
+            # Pattern 1: Standard "First Last" or "First Middle Last"
+            if re.match(r'^[A-Z][a-z]+(?:\s+[A-Z]\.?\s*)?(?:\s+[A-Z][a-z]+)+$', line):
+                print(f"   🎯 Found name pattern 1: {line}")
+                return self.split_full_name_resume(line)
+            
+            # Pattern 2: All caps name "JOHN DOE" or "JOHN A. DOE"
+            if re.match(r'^[A-Z]+(?:\s+[A-Z]\.?\s*)?(?:\s+[A-Z]+)+$', line) and len(line.split()) <= 4:
+                print(f"   🎯 Found name pattern 2: {line}")
+                return self.split_full_name_resume(line.title())
+            
+            # Pattern 3: Name with titles "Dr. John Smith" or "Prof. Jane Doe"
+            title_match = re.match(r'^(?:DR\.?|PROF\.?|MR\.?|MS\.?|MRS\.?)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)$', line, re.IGNORECASE)
+            if title_match:
+                name_part = title_match.group(1)
+                print(f"   🎯 Found name with title: {name_part}")
+                return self.split_full_name_resume(name_part)
+            
+            # Pattern 4: Check if line looks like a name but might have some formatting
+            words = line.split()
+            if 2 <= len(words) <= 4:  # Names typically have 2-4 words
+                # Check if all words look like name parts (start with capital, mostly letters)
+                name_like = all(
+                    word[0].isupper() and 
+                    len(word) > 1 and 
+                    (word.isalpha() or word.endswith('.')) and
+                    word.upper() not in ['EMAIL', 'PHONE', 'ADDRESS', 'LOCATION', 'POSITION', 'DEPARTMENT']
+                    for word in words
+                )
+                
+                if name_like:
+                    print(f"   🎯 Found name-like pattern: {line}")
+                    return self.split_full_name_resume(line)
+        
+        print(f"   ❌ No name found in resume header")
+        return None, None
+    
+    def extract_clean_address(self, lines):
+        """Extract clean address without email/phone contamination"""
+        address_keywords = ['ADDRESS', 'LOCATION', 'RESIDENCE', 'CITY', 'STATE']
+        
+        for i, line in enumerate(lines):
+            line_upper = line.upper()
+            
+            # Look for address keywords
+            if any(keyword in line_upper for keyword in address_keywords):
+                # Get the address content
+                if ':' in line:
+                    parts = line.split(':', 1)
+                    if len(parts) > 1:
+                        addr_part = parts[1].strip()
+                        # Clean the address - remove email and phone
+                        clean_addr = self.clean_address_content(addr_part)
+                        if clean_addr:
+                            return clean_addr
+                
+                # Check next line for address content
+                if i + 1 < len(lines):
+                    next_line = lines[i + 1].strip()
+                    clean_addr = self.clean_address_content(next_line)
+                    if clean_addr:
+                        return clean_addr
+        
+        # Fallback: look for city, state patterns
+        for line in lines:
+            city_state_match = re.search(r'([A-Za-z\s]+),\s*([A-Z]{2})\s*\d*', line)
+            if city_state_match:
+                return f"{city_state_match.group(1)}, {city_state_match.group(2)}"
+        
+        return None
+    
+    def clean_address_content(self, content):
+        """Clean address content by removing email and phone"""
+        if not content:
+            return None
+        
+        # Remove email addresses
+        content = re.sub(r'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}', '', content)
+        
+        # Remove phone numbers
+        content = re.sub(r'Phone:\s*[\d\-\(\)\s]+', '', content)
+        content = re.sub(r'\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{4}', '', content)
+        
+        # Remove LinkedIn, social media
+        content = re.sub(r'LinkedIn:\s*\S+', '', content)
+        content = re.sub(r'\|\s*LinkedIn:', '', content)
+        
+        # Clean up extra pipes and spaces
+        content = re.sub(r'\s*\|\s*', ' ', content)
+        content = re.sub(r'\s+', ' ', content)
+        content = content.strip(' |')
+        
+        # Validate it looks like an address
+        if len(content) > 5 and not re.search(r'@|Phone|LinkedIn', content):
+            return content
+        
+        return None
+    
+    def clean_teaching_faculty_resume_value(self, value, field_type):
+        """Clean extracted values from resume PDF"""
+        if not value or len(value.strip()) == 0:
+            return None
+        
+        value = value.strip()
+        
+        # Filter out common resume noise
+        resume_noise = [
+            'RESUME', 'CV', 'CURRICULUM VITAE', 'PROFILE', 'CONTACT', 'INFORMATION',
+            'PERSONAL', 'PROFESSIONAL', 'EXPERIENCE', 'EDUCATION', 'CERTIFICATION'
+        ]
+        
+        if value.upper() in resume_noise:
+            return None
+        
+        if field_type == 'full_name':
+            # Enhanced name cleaning for resume
+            cleaned = re.sub(r'[^A-Za-z\s\.]', '', value)
+            cleaned = re.sub(r'\s{2,}', ' ', cleaned).strip().title()
+            
+            # Remove common resume name noise
+            name_noise = ['Name', 'Full Name', 'Faculty', 'Professor']
+            words = cleaned.split()
+            cleaned_words = [word for word in words if word not in name_noise]
+            cleaned = ' '.join(cleaned_words)
+            
+            return cleaned if len(cleaned) > 2 else None
+        
+        elif field_type == 'email':
+            email_match = re.search(r'([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,})', value)
+            return email_match.group(1).lower() if email_match else None
+        
+        elif field_type == 'phone':
+            cleaned = re.sub(r'[^\d\+]', '', value)
+            if 10 <= len(cleaned) <= 15:
+                return cleaned
+            return None
+        
+        elif field_type == 'position':
+            # Clean position/title
+            cleaned = re.sub(r'[^A-Za-z\s\.]', '', value)
+            cleaned = re.sub(r'\s{2,}', ' ', cleaned).strip().title()
+            
+            # Remove position noise
+            position_noise = ['Position', 'Title', 'Designation', 'Current']
+            words = cleaned.split()
+            cleaned_words = [word for word in words if word not in position_noise]
+            cleaned = ' '.join(cleaned_words)
+            
+            return cleaned if len(cleaned) > 2 else None
+        
+        elif field_type == 'address':
+            # Clean address/location
+            cleaned = re.sub(r'\s{2,}', ' ', value).strip()
+            # Remove address noise
+            if any(noise in cleaned.upper() for noise in ['ADDRESS:', 'LOCATION:', 'RESIDENCE:']):
+                cleaned = re.sub(r'(ADDRESS|LOCATION|RESIDENCE)[:\s]*', '', cleaned, flags=re.IGNORECASE)
+            
+            return cleaned if len(cleaned) > 5 else None
+        
+        return value
+    
+    def split_full_name_resume(self, full_name):
+        """Split full name for resume (enhanced for professional names)"""
+        if not full_name:
+            return None, None
+        
+        full_name = full_name.strip()
+        
+        # Remove common prefixes
+        prefixes = ['DR.', 'DR', 'PROF.', 'PROF', 'MR.', 'MR', 'MS.', 'MS', 'MRS.', 'MRS']
+        for prefix in prefixes:
+            if full_name.upper().startswith(prefix):
+                full_name = full_name[len(prefix):].strip()
+                break
+        
+        # Case 1: "Surname, First Name Middle Name"
+        if ',' in full_name:
+            parts = full_name.split(',', 1)
+            surname = parts[0].strip()
+            first_name_parts = parts[1].strip().split()
+            first_name = first_name_parts[0] if first_name_parts else None
+            return surname, first_name
+        
+        # Case 2: "First Name Middle Name Surname"
+        name_parts = full_name.split()
+        if len(name_parts) >= 2:
+            surname = name_parts[-1]
+            first_name = ' '.join(name_parts[:-1])
+            return surname, first_name
+        elif len(name_parts) == 1:
+            return name_parts[0], None
+        
+        return None, None
+    
+    def extract_education_section(self, lines):
+        """Extract education information from resume"""
+        education_text = ""
+        in_education_section = False
+        
+        section_headers = ['EDUCATION', 'EDUCATIONAL BACKGROUND', 'ACADEMIC BACKGROUND', 'QUALIFICATIONS']
+        end_sections = ['EXPERIENCE', 'EMPLOYMENT', 'WORK HISTORY', 'PROFESSIONAL EXPERIENCE', 'CERTIFICATIONS', 'SKILLS', 'REFERENCES']
+        
+        for line in lines:
+            line_upper = line.upper().strip()
+            
+            # Check if we're starting education section
+            if any(header in line_upper for header in section_headers):
+                in_education_section = True
+                continue
+            
+            # Check if we're ending education section
+            if in_education_section and any(end_section in line_upper for end_section in end_sections):
+                break
+            
+            # Collect education content
+            if in_education_section and line.strip():
+                education_text += line + "\n"
+        
+        return education_text.strip() if education_text.strip() else None
+    
+    def extract_experience_section(self, lines):
+        """Extract professional experience information from resume"""
+        experience_text = ""
+        in_experience_section = False
+        
+        section_headers = ['EXPERIENCE', 'PROFESSIONAL EXPERIENCE', 'WORK HISTORY', 'EMPLOYMENT', 'CAREER', 'TEACHING EXPERIENCE']
+        end_sections = ['EDUCATION', 'CERTIFICATIONS', 'SKILLS', 'REFERENCES', 'PERSONAL INFORMATION']
+        
+        for line in lines:
+            line_upper = line.upper().strip()
+            
+            # Check if we're starting experience section
+            if any(header in line_upper for header in section_headers):
+                in_experience_section = True
+                continue
+            
+            # Check if we're ending experience section
+            if in_experience_section and any(end_section in line_upper for end_section in end_sections):
+                break
+            
+            # Collect experience content
+            if in_experience_section and line.strip():
+                experience_text += line + "\n"
+        
+        return experience_text.strip() if experience_text.strip() else None
+    
+    def extract_certifications_section(self, lines):
+        """Extract certifications information from resume"""
+        certifications_text = ""
+        in_certifications_section = False
+        
+        section_headers = ['CERTIFICATIONS', 'CERTIFICATES', 'LICENSES', 'PROFESSIONAL CERTIFICATIONS', 'QUALIFICATIONS']
+        end_sections = ['EDUCATION', 'EXPERIENCE', 'SKILLS', 'REFERENCES', 'PERSONAL INFORMATION']
+        
+        for line in lines:
+            line_upper = line.upper().strip()
+            
+            # Check if we're starting certifications section
+            if any(header in line_upper for header in section_headers):
+                in_certifications_section = True
+                continue
+            
+            # Check if we're ending certifications section
+            if in_certifications_section and any(end_section in line_upper for end_section in end_sections):
+                break
+            
+            # Collect certifications content
+            if in_certifications_section and line.strip():
+                certifications_text += line + "\n"
+        
+        return certifications_text.strip() if certifications_text.strip() else None
+    
+    def fuzzy_field_extraction_resume(self, lines, field_type):
+        """Enhanced fuzzy extraction for resume content"""
+        field_keywords = {
+            'surname': ['surname', 'last name', 'family name'],
+            'first_name': ['first name', 'given name', 'firstname'],
+            'position': ['position', 'title', 'designation', 'current role', 'job title'],
+            'email': ['email', 'e-mail', 'electronic mail'],
+            'phone': ['phone', 'mobile', 'contact', 'telephone', 'cell'],
+            'address': ['address', 'location', 'residence', 'home address']
+        }
+        
+        keywords = field_keywords.get(field_type, [])
+        
+        for line_idx, line in enumerate(lines):
+            line_upper = line.upper()
+            for keyword in keywords:
+                if keyword.upper() in line_upper:
+                    # Extract value from same line
+                    value = self.extract_value_from_resume_line(line, keyword)
+                    if value:
+                        cleaned = self.clean_teaching_faculty_resume_value(value, field_type)
+                        if cleaned:
+                            return cleaned
+                    
+                    # Look in next few lines
+                    for offset in range(1, 3):
+                        if line_idx + offset < len(lines):
+                            next_line = lines[line_idx + offset].strip()
+                            if next_line:
+                                cleaned = self.clean_teaching_faculty_resume_value(next_line, field_type)
+                                if cleaned:
+                                    return cleaned
+        
+        return None
+    
+    def extract_value_from_resume_line(self, line, keyword):
+        """Extract value from a resume line containing a keyword"""
+        line_upper = line.upper()
+        keyword_upper = keyword.upper()
+        
+        if keyword_upper in line_upper:
+            # Try different separators
+            for separator in [':', '-', '|', '\t']:
+                if separator in line:
+                    parts = line.split(separator, 1)
+                    if len(parts) > 1:
+                        value = parts[1].strip()
+                        if value and len(value) > 1:
+                            return value
+            
+            # Try extracting after keyword
+            keyword_pos = line_upper.find(keyword_upper)
+            if keyword_pos >= 0:
+                after_keyword = line[keyword_pos + len(keyword):].strip()
+                if after_keyword and len(after_keyword) > 1:
+                    return after_keyword
+        
+        return None
+    
+    def process_teaching_faculty_resume_pdf(self, filename):
+        """Process Teaching Faculty Resume PDF file"""
+        try:
+            faculty_data = self.extract_teaching_faculty_resume_pdf_info(filename)
+            if not faculty_data:
+                print("❌ Could not extract teaching faculty resume data from PDF")
+                return False
+            
+            # ENHANCED: Better department inference
+            department = faculty_data.get('department', '')
+            
+            # If no department inferred from content, try position
+            if not department or department in ['N/A', 'NA', '']:
+                if faculty_data.get('position'):
+                    department = self.infer_department_from_position(faculty_data['position'])
+            
+            # Final fallback
+            if not department or department in ['N/A', 'NA', '']:
+                department = 'CAS'  # Default for general academic faculty
+            
+            formatted_text = self.format_teaching_faculty_resume_enhanced(faculty_data)
+            
+            # ENHANCED: Better name handling
+            full_name = ""
+            if faculty_data.get('surname') and faculty_data.get('first_name'):
+                full_name = f"{faculty_data['surname']}, {faculty_data['first_name']}"
+            elif faculty_data.get('surname'):
+                full_name = faculty_data['surname']
+            elif faculty_data.get('first_name'):
+                full_name = faculty_data['first_name']
+            elif faculty_data.get('email'):
+                # Use email username as backup name
+                email_username = faculty_data['email'].split('@')[0] if '@' in faculty_data['email'] else ''
+                full_name = email_username.capitalize() if email_username else "Unknown Faculty"
+            else:
+                full_name = "Unknown Faculty"
+            
+            metadata = {
+                'full_name': full_name,
+                'surname': faculty_data.get('surname') or '',
+                'first_name': faculty_data.get('first_name') or '',
+                'department': self.standardize_department_name(department),
+                'position': faculty_data.get('position') or '',
+                'email': faculty_data.get('email') or '',
+                'phone': faculty_data.get('phone') or '',
+                'address': faculty_data.get('address') or '',
+                'data_type': 'teaching_faculty_resume_pdf',
+                'faculty_type': 'teaching',
+            }
+            
+            # Store with hierarchy
+            collection_name = self.create_smart_collection_name('faculty', metadata)
+            collection = self.client.get_or_create_collection(
+                name=collection_name, 
+                embedding_function=self.embedding_function
+            )
+            
+            self.store_with_smart_metadata(collection, [formatted_text], [metadata])
+            self.collections[collection_name] = collection
+            
+            hierarchy_path = f"{self.get_department_display_name(metadata['department'])} > Teaching Faculty"
+            print(f"✅ Loaded teaching faculty resume into: {collection_name}")
+            print(f"   📂 Hierarchy: {hierarchy_path}")
+            print(f"   👨‍🏫 Faculty: {metadata['full_name']} ({metadata['position']})")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error processing teaching faculty resume PDF: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+    
+    def format_teaching_faculty_resume_enhanced(self, faculty_data):
+        """Enhanced teaching faculty resume formatting"""
+        
+        def format_field(value):
+            if value and value not in ['None', 'N/A', '']:
+                return value
+            return 'N/A'
+        
+        text = f"""TEACHING FACULTY RESUME
+
+        PERSONAL INFORMATION:
+        Surname: {format_field(faculty_data.get('surname'))}
+        First Name: {format_field(faculty_data.get('first_name'))}
+        Position: {format_field(faculty_data.get('position'))}
+        Email: {format_field(faculty_data.get('email'))}
+        Phone: {format_field(faculty_data.get('phone'))}
+        Address: {format_field(faculty_data.get('address'))}
+        """
+        
+        # Add education section if available
+        education = faculty_data.get('education')
+        if education and education not in ['None', 'N/A', '']:
+            text += f"""
+        EDUCATIONAL BACKGROUND:
+        {education}
+        """
+        
+        # Add professional experience section if available
+        experience = faculty_data.get('professional_experience')
+        if experience and experience not in ['None', 'N/A', '']:
+            text += f"""
+        PROFESSIONAL EXPERIENCE:
+        {experience}
+        """
+        
+        # Add certifications section if available
+        certifications = faculty_data.get('certifications')
+        if certifications and certifications not in ['None', 'N/A', '']:
+            text += f"""
+        CERTIFICATIONS:
+        {certifications}
+        """
+        
+        return text.strip()
+    
    # ======================== FACULTY PROCESSING ========================
    
     def process_faculty_excel(self, filename):
@@ -4836,6 +7671,483 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
         except Exception as e:
             print(f"❌ Error processing faculty schedule PDF: {e}")
             return False
+        
+    def is_student_cor_pdf(self, filename):
+        """Check if PDF is a Student COR file"""
+        try:
+            # First check filename patterns
+            filename_lower = filename.lower()
+            if 'cor' in filename_lower and any(term in filename_lower for term in ['student', 'bscs', 'bsit', 'bshm', 'bstm']):
+                print(f"🎯 Filename suggests Student COR: {filename}")
+                
+            doc = fitz.open(filename)
+            first_page = doc[0].get_text().lower()
+            doc.close()
+            
+            # Student COR specific indicators
+            student_cor_indicators = [
+                "certificate of registration", "cor", "student schedule", 
+                "enrolled subjects", "student information", "program:", "year level:", "section:"
+            ]
+            
+            # Must have COR-like structure AND student context
+            has_cor_indicator = any(indicator in first_page for indicator in student_cor_indicators)
+            has_student_context = any(term in first_page for term in ["student", "enrolled", "registration", "program", "year level"])
+            
+            # Should have schedule structure with specific fields
+            has_schedule_structure = ("subject" in first_page and 
+                                    ("day" in first_page or "time" in first_page) and 
+                                    ("units" in first_page or "description" in first_page))
+            
+            # Should have program information (key difference from faculty schedules)
+            has_program_info = any(term in first_page for term in ["program:", "year level:", "section:", "adviser:"])
+            
+            is_student_cor = has_cor_indicator and has_student_context and has_schedule_structure and has_program_info
+            
+            print(f"🔍 Student COR detection for {filename}:")
+            print(f"   COR indicator: {has_cor_indicator}")
+            print(f"   Student context: {has_student_context}")
+            print(f"   Schedule structure: {has_schedule_structure}")
+            print(f"   Program info: {has_program_info}")
+            print(f"   Final result: {is_student_cor}")
+            
+            return is_student_cor
+        except Exception as e:
+            print(f"❌ Error checking Student COR PDF: {e}")
+            return False
+        
+    def extract_student_cor_pdf_info(self, filename):
+        """Extract Student COR information from PDF"""
+        try:
+            doc = fitz.open(filename)
+            full_text = ""
+            for page in doc:
+                full_text += page.get_text()
+            doc.close()
+            
+            lines = [line.strip() for line in full_text.split('\n') if line.strip()]
+            
+            # Extract program info with better logic
+            program_info = {
+                'Program': '',
+                'Year Level': '',
+                'Section': '',
+                'Adviser': '',
+                'Total Units': ''
+            }
+            
+            # Enhanced extraction for each field
+            for i, line in enumerate(lines):
+                line_clean = line.strip()
+                
+                if line_clean == 'Program:':
+                    program_info['Program'] = self.extract_value_from_line(line, lines, i)
+                    print(f"🎯 Found Program: {program_info['Program']}")
+                
+                elif line_clean == 'Year Level:':
+                    year_value = self.extract_value_from_line(line, lines, i)
+                    if year_value:
+                        # Extract just the number from "2nd Year"
+                        year_match = re.search(r'([1-4])', year_value)
+                        program_info['Year Level'] = year_match.group(1) if year_match else year_value
+                        print(f"🎯 Found Year Level: {program_info['Year Level']}")
+                
+                elif line_clean == 'Section:':
+                    program_info['Section'] = self.extract_value_from_line(line, lines, i)
+                    print(f"🎯 Found Section: {program_info['Section']}")
+                
+                elif line_clean == 'Adviser:':
+                    program_info['Adviser'] = self.extract_value_from_line(line, lines, i)
+                    print(f"🎯 Found Adviser: {program_info['Adviser']}")
+                
+                elif line_clean == 'Total Units:':
+                    total_units = self.extract_value_from_line(line, lines, i)
+                    if total_units:
+                        program_info['Total Units'] = total_units
+                        print(f"🎯 Found Total Units: {program_info['Total Units']}")
+            
+            print(f"🔍 Extracted program info: {program_info}")
+            
+            # Extract schedule data with the new enhanced method
+            schedule_data = self.extract_student_cor_schedule_data_enhanced(lines)
+            
+            return {
+                'program_info': program_info,
+                'schedule': schedule_data,
+                'total_units': program_info.get('Total Units', '')
+            }
+            
+        except Exception as e:
+            print(f"❌ Error extracting Student COR PDF: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
+    
+    def extract_student_cor_schedule_data_enhanced(self, lines):
+        """Enhanced schedule data extraction that handles vertical layout"""
+        schedule_data = []
+        
+        print(f"🔍 DEBUG: Looking for schedule table in {len(lines)} lines")
+        
+        # Find the table start (after the headers)
+        table_start = -1
+        
+        # Look for the header pattern
+        for i, line in enumerate(lines):
+            if line.strip() == 'Subject Code':
+                # Check if the next few lines are also headers
+                if (i + 5 < len(lines) and 
+                    lines[i + 1].strip() == 'Description' and
+                    lines[i + 2].strip() == 'Type' and
+                    lines[i + 3].strip() == 'Units' and
+                    lines[i + 4].strip() == 'Day'):
+                    table_start = i + 6  # Start after "Time Start Time End"
+                    print(f"🎯 Found vertical table headers starting at line {i}, data starts at {table_start}")
+                    break
+        
+        if table_start == -1:
+            print("⚠️ Could not find table headers")
+            return []
+        
+        # Extract data in groups of 7 (Subject Code, Description, Type, Units, Day, Time Start, Time End)
+        # But also handle Room data that appears at the end
+        i = table_start
+        while i < len(lines):
+            line = lines[i].strip()
+            
+            # Stop at Total Units or Room section
+            if 'Total Units:' in line or line == 'Room':
+                print(f"🛑 Stopping at: {line}")
+                break
+            
+            # Check if this looks like a subject code
+            if re.match(r'^[A-Z]{2,5}\s*\d{3}[A-Z]?$', line):
+                print(f"🔍 Processing subject starting at line {i}: {line}")
+                
+                # Extract the 7 fields for this subject
+                subject_entry = {
+                    'Subject Code': line if i < len(lines) else '',
+                    'Description': lines[i + 1].strip() if i + 1 < len(lines) else '',
+                    'Type': lines[i + 2].strip() if i + 2 < len(lines) else '',
+                    'Units': lines[i + 3].strip() if i + 3 < len(lines) else '',
+                    'Day': lines[i + 4].strip() if i + 4 < len(lines) else '',
+                    'Time Start': lines[i + 5].strip() if i + 5 < len(lines) else '',
+                    'Time End': lines[i + 6].strip() if i + 6 < len(lines) else ''
+                }
+                
+                # Validate that we have the essential data
+                if subject_entry['Subject Code'] and subject_entry['Description']:
+                    schedule_data.append(subject_entry)
+                    print(f"📚 Added subject: {subject_entry['Subject Code']} - {subject_entry['Description']} ({subject_entry['Type']}, {subject_entry['Units']} units, {subject_entry['Day']} {subject_entry['Time Start']}-{subject_entry['Time End']})")
+                
+                # Move to next subject (skip 7 lines)
+                i += 7
+            else:
+                i += 1
+        
+        print(f"🔍 Final schedule data: {len(schedule_data)} subjects found")
+        return schedule_data
+    
+    def parse_student_cor_schedule_line_enhanced(self, line, all_lines, line_index):
+        """Enhanced parsing with multiple strategies"""
+        # Initialize subject entry
+        subject_entry = {
+            'Subject Code': '',
+            'Description': '',
+            'Type': '',
+            'Units': '',
+            'Day': '',
+            'Time Start': '',
+            'Time End': ''
+        }
+        
+        print(f"   🔍 Parsing: '{line}'")
+        
+        # Strategy 1: Look for subject code at start of line
+        subject_match = re.search(r'^([A-Z]{2,5}\s*\d{3}[A-Z]?)', line)
+        if subject_match:
+            subject_entry['Subject Code'] = subject_match.group(1).strip()
+            print(f"      ✅ Found subject code: {subject_entry['Subject Code']}")
+            
+            # Extract rest of the line after subject code
+            remaining = line[subject_match.end():].strip()
+            
+            # Try to extract description (usually the next big chunk of text)
+            desc_match = re.search(r'^([A-Za-z\s,&-]+?)(?:\s+\d|\s+[A-Z]{2,3}\s|\s*$)', remaining)
+            if desc_match:
+                subject_entry['Description'] = desc_match.group(1).strip()
+                print(f"      ✅ Found description: {subject_entry['Description']}")
+            
+            # Extract units (look for standalone numbers)
+            units_matches = re.findall(r'\b(\d+(?:\.\d+)?)\b', remaining)
+            if units_matches:
+                # Usually the first number after description is units
+                subject_entry['Units'] = units_matches[0]
+                print(f"      ✅ Found units: {subject_entry['Units']}")
+            
+            # Extract day pattern
+            day_match = re.search(r'\b(MON|TUE|WED|THU|FRI|SAT|MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY)\b', line.upper())
+            if day_match:
+                subject_entry['Day'] = day_match.group(1)
+                print(f"      ✅ Found day: {subject_entry['Day']}")
+            
+            # Extract time pattern
+            time_match = re.search(r'(\d{1,2}:\d{2}(?:\s*(?:AM|PM))?)\s*-?\s*(\d{1,2}:\d{2}(?:\s*(?:AM|PM))?)?', line)
+            if time_match:
+                subject_entry['Time Start'] = time_match.group(1)
+                if time_match.group(2):
+                    subject_entry['Time End'] = time_match.group(2)
+                print(f"      ✅ Found time: {subject_entry['Time Start']} - {subject_entry.get('Time End', 'N/A')}")
+            
+            # Extract type (LEC, LAB, etc.)
+            type_match = re.search(r'\b(LEC|LAB|LECTURE|LABORATORY)\b', line.upper())
+            if type_match:
+                subject_entry['Type'] = type_match.group(1)
+                print(f"      ✅ Found type: {subject_entry['Type']}")
+            
+            return subject_entry
+        
+        # Strategy 2: Check if line contains subject-like content even without clear code
+        if any(keyword in line.upper() for keyword in ['MATHEMATICS', 'ENGLISH', 'SCIENCE', 'COMPUTER', 'PROGRAMMING']):
+            # Try to extract what we can
+            subject_entry['Description'] = line.strip()
+            print(f"      ⚠️ Partial match - description only: {subject_entry['Description']}")
+            return subject_entry
+        
+        print(f"      ❌ No match found for: {line}")
+        return None
+        
+    def extract_value_from_line(self, line, all_lines, line_index):
+        """Enhanced value extraction from line and surrounding context"""
+        line_upper = line.upper()
+        
+        # Method 1: Extract after colon
+        if ':' in line:
+            parts = line.split(':', 1)
+            if len(parts) > 1:
+                value = parts[1].strip()
+                if value and len(value) > 1:
+                    return value
+        
+        # Method 2: Check next line for values like "2nd Year", "A", etc.
+        if line_index + 1 < len(all_lines):
+            next_line = all_lines[line_index + 1].strip()
+            if next_line and len(next_line) > 0:
+                # Don't take header-like text
+                if not any(keyword in next_line.upper() for keyword in ['PROGRAM', 'YEAR LEVEL', 'SECTION', 'ADVISER', 'SUBJECT']):
+                    return next_line
+        
+        return None
+        
+    def extract_student_cor_schedule_data(self, lines):
+        """Extract schedule data from Student COR PDF"""
+        schedule_data = []
+        
+        # Find the schedule table start
+        table_start = -1
+        header_patterns = ['SUBJECT CODE', 'DESCRIPTION', 'TYPE', 'UNITS', 'DAY', 'TIME']
+        
+        for i, line in enumerate(lines):
+            line_upper = line.upper()
+            header_count = sum(1 for pattern in header_patterns if pattern in line_upper)
+            if header_count >= 4:  # Found header row
+                table_start = i + 1
+                print(f"🎯 Found student COR schedule header at line {i}")
+                break
+        
+        if table_start == -1:
+            print("⚠️ Could not find schedule table in Student COR")
+            return []
+        
+        # Extract schedule entries
+        current_subject = {}
+        
+        for i in range(table_start, len(lines)):
+            line = lines[i].strip()
+            
+            # Stop at footer or end markers
+            if any(keyword in line.upper() for keyword in ['TOTAL UNITS', 'GENERATED ON', 'END OF', 'PRINTED']):
+                break
+            
+            if not line:
+                continue
+            
+            # Try to parse the line as schedule data
+            # This handles various PDF formats by using patterns
+            subject_entry = self.parse_student_cor_schedule_line(line, lines, i)
+            
+            if subject_entry:
+                schedule_data.append(subject_entry)
+                print(f"📚 Added subject: {subject_entry.get('Subject Code', 'N/A')} - {subject_entry.get('Description', 'N/A')}")
+        
+        return schedule_data
+    
+    def parse_student_cor_schedule_line(self, line, all_lines, line_index):
+        """Parse a single line of student COR schedule data"""
+        # Initialize subject entry
+        subject_entry = {
+            'Subject Code': '',
+            'Description': '',
+            'Type': '',
+            'Units': '',
+            'Day': '',
+            'Time Start': '',
+            'Time End': '',
+            'Total Units': ''
+        }
+        
+        # Strategy 1: Try to parse structured line (space or tab separated)
+        parts = re.split(r'\s{2,}|\t', line)  # Split on multiple spaces or tabs
+        
+        if len(parts) >= 4:  # Minimum expected fields
+            # Map parts to fields based on position
+            try:
+                subject_entry['Subject Code'] = parts[0].strip()
+                subject_entry['Description'] = parts[1].strip() if len(parts) > 1 else ''
+                
+                # Look for units (numeric pattern)
+                for part in parts:
+                    if re.match(r'^\d+(\.\d+)?$', part.strip()):
+                        subject_entry['Units'] = part.strip()
+                        break
+                
+                # Look for days pattern
+                for part in parts:
+                    if any(day in part.upper() for day in ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']):
+                        subject_entry['Day'] = part.strip()
+                        break
+                
+                # Look for time pattern
+                for part in parts:
+                    if re.search(r'\d{1,2}:\d{2}', part):
+                        time_part = part.strip()
+                        if '-' in time_part:
+                            time_split = time_part.split('-')
+                            subject_entry['Time Start'] = time_split[0].strip()
+                            subject_entry['Time End'] = time_split[1].strip() if len(time_split) > 1 else ''
+                        else:
+                            subject_entry['Time Start'] = time_part
+                        break
+                
+                # Look for type (LEC, LAB, etc.)
+                for part in parts:
+                    if part.upper() in ['LEC', 'LAB', 'LECTURE', 'LABORATORY']:
+                        subject_entry['Type'] = part.strip()
+                        break
+                
+                # Validate that we have essential data
+                if subject_entry['Subject Code'] and len(subject_entry['Subject Code']) >= 2:
+                    return subject_entry
+            
+            except Exception as e:
+                print(f"⚠️ Error parsing structured line: {e}")
+        
+        # Strategy 2: Try pattern matching on the entire line
+        subject_match = re.search(r'^([A-Z]{2,5}\s*\d{3}[A-Z]?)', line)
+        if subject_match:
+            subject_entry['Subject Code'] = subject_match.group(1).strip()
+            
+            # Extract description (usually follows subject code)
+            desc_match = re.search(r'^[A-Z]{2,5}\s*\d{3}[A-Z]?\s+(.+?)(?:\s+\d+|\s+[A-Z]{2,3}\s|$)', line)
+            if desc_match:
+                subject_entry['Description'] = desc_match.group(1).strip()
+            
+            # Extract units
+            units_match = re.search(r'\b(\d+(?:\.\d+)?)\b', line)
+            if units_match:
+                subject_entry['Units'] = units_match.group(1)
+            
+            # Extract day
+            day_match = re.search(r'\b(MON|TUE|WED|THU|FRI|SAT|MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY)\b', line.upper())
+            if day_match:
+                subject_entry['Day'] = day_match.group(1)
+            
+            # Extract time
+            time_match = re.search(r'(\d{1,2}:\d{2}(?:\s*(?:AM|PM))?)\s*-?\s*(\d{1,2}:\d{2}(?:\s*(?:AM|PM))?)?', line)
+            if time_match:
+                subject_entry['Time Start'] = time_match.group(1)
+                if time_match.group(2):
+                    subject_entry['Time End'] = time_match.group(2)
+            
+            return subject_entry
+        
+        return None
+
+    def process_student_cor_pdf(self, filename):
+        """Process Student COR PDF file"""
+        try:
+            cor_info = self.extract_student_cor_pdf_info(filename)
+            if not cor_info:
+                print("❌ Could not extract Student COR data from PDF")
+                return False
+            
+            formatted_text = self.format_student_cor_info(cor_info)
+            
+            # Create smart metadata with proper department detection
+            program = cor_info['program_info']['Program']
+            department = self.detect_department_from_course(program) if program else 'UNKNOWN'
+            
+            metadata = {
+                'course': program,
+                'section': cor_info['program_info']['Section'],
+                'year_level': cor_info['program_info']['Year Level'],
+                'adviser': cor_info['program_info']['Adviser'],
+                'data_type': 'student_cor_pdf',
+                'subject_codes': ', '.join([course.get('Subject Code', '') for course in cor_info['schedule'] if course.get('Subject Code')]),
+                'total_units': str(cor_info.get('total_units', '')),
+                'subject_count': len(cor_info['schedule']),
+                'department': department
+            }
+            
+            # Store with hierarchy using schedules
+            collection_name = self.create_smart_collection_name('schedules', metadata)
+            collection = self.client.get_or_create_collection(
+                name=collection_name, 
+                embedding_function=self.embedding_function
+            )
+            self.store_with_smart_metadata(collection, [formatted_text], [metadata])
+            self.collections[collection_name] = collection
+            
+            hierarchy_path = f"{self.get_department_display_name(department)} > {program} > Year {metadata['year_level']} > Section {metadata['section']}"
+            print(f"✅ Loaded Student COR schedule into: {collection_name}")
+            print(f"   📁 Hierarchy: {hierarchy_path}")
+            print(f"   📚 Subjects: {metadata['subject_count']}, Total Units: {metadata['total_units']}")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error processing Student COR PDF: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+        
+    def format_student_cor_info(self, cor_info):
+        """Format Student COR information as text"""
+        text = f"""STUDENT CERTIFICATE OF REGISTRATION (COR)
+
+    STUDENT PROGRAM INFORMATION:
+    Program: {cor_info['program_info']['Program']}
+    Year Level: {cor_info['program_info']['Year Level']}
+    Section: {cor_info['program_info']['Section']}
+    Adviser: {cor_info['program_info']['Adviser']}
+    Total Units: {cor_info.get('total_units', 'N/A')}
+
+    ENROLLED SUBJECTS ({len(cor_info['schedule'])} subjects):
+    """
+        
+        if cor_info['schedule']:
+            for i, course in enumerate(cor_info['schedule'], 1):
+                text += f"""
+    Subject {i}:
+    - Subject Code: {course.get('Subject Code', 'N/A')}
+    - Description: {course.get('Description', 'N/A')}
+    - Type: {course.get('Type', 'N/A')}
+    - Units: {course.get('Units', 'N/A')}
+    - Schedule: {course.get('Day', 'N/A')} {course.get('Time Start', 'N/A')}-{course.get('Time End', 'N/A')}
+    """
+        else:
+            text += "\nNo subjects found in schedule."
+        
+        return text.strip()
 
    # ======================== FILE TYPE DETECTION ========================
    
@@ -5667,23 +8979,37 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
                 elif self.is_faculty_excel(df_check):
                     print("🔍 Detected as Faculty Excel")
                     return self.process_with_duplicate_check(filename, 'teaching_faculty')  # Treat as teaching faculty
+                elif self.is_student_grades_excel(df_check):
+                    print("🔍 Detected as Student Grades Excel")
+                    return self.process_with_duplicate_check(filename, 'student_grades')
                 else:
                     print("🔍 Detected as Student Excel")
                     return self.process_with_duplicate_check(filename, 'student')
                     
             elif ext == ".pdf":
-                # NOTE: Curriculum PDFs could be added here later if needed
-                if self.is_cor_pdf(filename):
-                    print("🔍 Detected as COR PDF")
+                # Check Student COR FIRST before regular COR
+                if self.is_student_cor_pdf(filename):
+                    print("📄 Detected as Student COR PDF")
+                    return self.process_with_duplicate_check(filename, 'student_cor_schedule')
+                elif self.is_cor_pdf(filename):
+                    print("📄 Detected as COR PDF")
                     return self.process_with_duplicate_check(filename, 'cor_schedule')
+                # NEW: Check for Teaching Faculty Resume PDF
+                elif self.is_teaching_faculty_resume_pdf(filename):
+                    print("📄 Detected as Teaching Faculty Resume PDF")
+                    return self.process_with_duplicate_check(filename, 'teaching_faculty_resume_pdf')
+                # NEW: Check for Non-Teaching Faculty Resume PDF
+                elif self.is_non_teaching_faculty_resume_pdf(filename):
+                    print("📄 Detected as Non-Teaching Faculty Resume PDF")
+                    return self.process_with_duplicate_check(filename, 'non_teaching_faculty_resume_pdf')
                 elif self.is_faculty_schedule_pdf(filename):
-                    print("🔍 Detected as Faculty Schedule PDF")
+                    print("📄 Detected as Faculty Schedule PDF")
                     return self.process_with_duplicate_check(filename, 'teaching_faculty_schedule')
                 elif self.is_faculty_pdf(filename):
-                    print("🔍 Detected as Faculty PDF")
+                    print("📄 Detected as Faculty PDF")
                     return self.process_with_duplicate_check(filename, 'teaching_faculty')
                 else:
-                    print("🔍 Detected as Student PDF")
+                    print("📄 Detected as Student PDF")
                     return self.process_with_duplicate_check(filename, 'student')
                     
         except Exception as e:
@@ -8166,90 +11492,6 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
         
         return all_results
 
-    def smart_search(self):
-        """True AI-powered search interface"""
-        query = input("\n🧠 Enter your search query: ").strip()
-        if not query:
-            return
-        
-        try:
-            limit_input = input("🔢 Max results (default 15): ").strip()
-            max_results = int(limit_input) if limit_input else 15
-        except ValueError:
-            max_results = 50
-        
-        print(f"\n🔍 AI is analyzing your query...")
-        
-        # Use the new AI-powered search
-        results = self.smart_search_with_ai_reasoning(query, max_results)
-        
-        if results:
-            print(f"\n✅ Found {len(results)} highly relevant results:")
-            for i, result in enumerate(results, 1):
-                print(f"\n📄 Result {i} (Relevance: {result['relevance']}) - {result['source']}:")
-                print(f"📁 {result.get('hierarchy', 'N/A')}")
-                print(f"🎯 Match: {result['match_reason']}")
-                print("-" * 60)
-                print(result['content'])
-        else:
-            print("❌ No relevant results found. Try rephrasing your query.")
-
-    def exact_match_search(self): # Removed 'query' parameter as it's taken from input
-        """Perform exact text matching across all collections"""
-        query = input("\n📝 Enter exact text to find: ").strip()
-        if not query:
-            return
-                
-        print(f"\n🔍 Searching for exact matches: '{query}'")
-        matches = []
-        for name, collection in self.collections.items():
-            try:
-                # Get all documents from collection
-                all_docs = collection.get() # Fetches all documents, can be slow for large collections
-                for doc in all_docs["documents"]:
-                    # Perform a case-insensitive search for flexibility
-                    if query.lower() in doc.lower():
-                        metadata = all_docs["metadatas"][all_docs["documents"].index(doc)] # Get corresponding metadata
-                        collection_type = self.get_collection_type(name)
-                        
-                        # ENHANCED: Use the centralized hierarchy display method
-                        hierarchy = self.get_proper_hierarchy_display(name, metadata)
-
-                        matches.append({
-                            "source": collection_type, 
-                            "content": doc,
-                            "metadata": metadata,
-                            "hierarchy": hierarchy
-                        })
-            except Exception as e:
-                print(f"⚠️ Error in exact search for {name}: {e}")
-                
-        if matches:
-            print(f"\n✅ Found {len(matches)} exact matches:")
-            for i, match in enumerate(matches, 1):
-                print(f"\n📄 Match {i} (from {match['source']}):")
-                print(f"📁 {match.get('hierarchy', 'N/A')}")
-                print("-" * 60)
-                print(match['content'])
-        else:
-            print("❌ No exact matches found.")
-
-
-    def search_specific_collection(self, collection_name, query, max_results=50):
-        """Search in a specific collection"""
-        if collection_name not in self.collections:
-            print(f"❌ Collection '{collection_name}' not found")
-            return []
-        
-        try:
-            collection = self.collections[collection_name]
-            # Use the consistent embedding function when querying
-            results = collection.query(query_texts=[query], n_results=max_results)
-            return results["documents"][0] if results["documents"] and results["documents"][0] else []
-        except Exception as e:
-            print(f"❌ Error searching: {e}")
-            return []
-
     # ======================== COLLECTION MANAGEMENT ========================
     
     def delete_collection(self, collection_name):
@@ -8445,26 +11687,26 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
     # ======================== USER INTERFACE ========================
     
     def show_search_options(self):
-        """Display search options to user"""
-        print("\n🔍 SEARCH OPTIONS:")
-        print("1. 🔎 Smart Search")
-        print("2. 📝 Exact Match Search")
-        print("3. 🤖 GROUP 3 AI (DITO YUNG AI MISMO IGNORE IBA)") # 🆕 RENAMED/ADDED
-        print("4. 📊 Browse by Collection")
-        print("5. 📂 Load More Data")
-        print("6. 📋 Show All Collections")
-        print("7. 🗑️ Manage Collections")
-        print("8. 🧹 Clean Existing Duplicates")
-        print("9. ⚙️ System Options") # 🆕 ADDED
-        print("10. ❌ Exit")
+        """Displays the main menu options to the user."""
+        print("\n" + "="*50)
+        print(" MAIN MENU")
+        print("="*50)
+        print("1. 🤖 Engage AI School Analyst (Recommended)")
+        print("2. 📂 Load More Data")
+        print("3. 🗑️ Manage Collections")
+        print("4. ⚙️ System Options")
+        print("5. ❌ Exit")
 
         if self.collections:
-            if self.debug_mode:
-                print(f"\n📚 Loaded Collections:")
-                for name in self.collections.keys():
-                    count = self.collections[name].count()
-                    collection_type = self.get_collection_type(name)
-                    print(f"   • {collection_type} ({count} records)")
+            print(f"\n📚 Loaded Collections:")
+            for name in self.collections.keys():
+                count = self.collections[name].count()
+                collection_type = self.get_collection_type(name)
+                print(f"   • {collection_type} ({count} records)")
+
+    # The smart_search and exact_search methods were updated in the previous turn
+    # to ensure they call the correct methods. No further changes needed here.
+    # The exact_search method also now takes input directly.
 
     def browse_collections(self):
         """Browse data by collection"""
@@ -8528,46 +11770,33 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
             print("-" * 40)
 
     def run_query_interface(self):
-        """Main query interface"""
+        """Main menu to launch the AI Analyst."""
         if not self.data_loaded:
-            if self.debug_mode:
-                print("❌ No data loaded. Please load data first.")
-            return
-        
-        print("\n" + "="*70)
-        print("🎯 SMART STUDENT DATA SYSTEM - READY!")
-        print("="*70)
+            if not self.quick_setup(): return
         
         while True:
             self.show_search_options()
-            
             try:
-                choice = input("\n💡 Choose an option (1-10): ").strip()
-                
+                choice = input("\n💡 Choose an option: ").strip()
+
                 if choice == "1":
-                    self.smart_search()
+                    # This is the new integration point from the README
+                    print("🚀 Initializing AI School Analyst...")
+                    llm_cfg = load_llm_config("config.json")
+                    ai = AIAnalyst(self.collections, llm_cfg)
+                    ai.start_ai_analyst()
+
                 elif choice == "2":
-                    self.exact_match_search()
-                elif choice == "3": # 🆕 HANDLES NEW OPTION
-                    self.test_llm_search()
-                elif choice == "4":
-                    self.browse_collections()
-                elif choice == "5":
                     self.load_new_data()
-                elif choice == "6":
-                    self.show_all_collections()
-                elif choice == "7":
+                elif choice == "3":
                     self.manage_collections()
-                elif choice == "8":
-                    self.scan_and_clean_existing_duplicates()
-                elif choice == "9": # 🆕 HANDLES NEW OPTION
+                elif choice == "4":
                     self.manage_system_options()
-                elif choice == "10":
+                elif choice == "5":
                     print("👋 Goodbye!")
                     break
                 else:
-                    print("❌ Invalid choice. Please select 1-10.")
-                    
+                    print("❌ Invalid choice.")
             except KeyboardInterrupt:
                 print("\n👋 Goodbye!")
                 break

@@ -1,0 +1,593 @@
+{
+  "examples": [
+    {
+      "query": "1st year students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for information about 1st year students. I need to find all students who are in their first year across all departments and programs.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "students",
+                "filters": {
+                  "year_level": "1"
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "I have retrieved the list of 1st year students. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "what is the schedule of jake bautista",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for the schedule of a person named Jake Bautista. First, I must find the record for 'Jake Bautista' to get their details like program, year, and section. I will search all collections to be thorough.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "Jake Bautista",
+                "document_filter": {
+                  "$and": [
+                    {
+                      "$contains": "Jake"
+                    },
+                    {
+                      "$contains": "Bautista"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "Now that I have the student's details from Step 1, I must use placeholders to find their specific schedule in the 'schedules' collections.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "schedules",
+                "query_text": "class schedule",
+                "filters": {
+                  "year_level": "$year_level_from_step_1",
+                  "section": "$section_from_step_1",
+                  "program": "$program_from_step_1"
+                }
+              }
+            }
+          },
+          {
+            "step": 3,
+            "thought": "I have found the student and their matching schedule. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "does 3rd year bscs have curriculum data",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking if there is curriculum data available for 3rd year BSCS students. I need to check the curriculum collections to see if there is data specifically for the 3rd year of the BSCS program.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "curriculum",
+                "filters": {
+                  "program": "BSCS"
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "Now that I have the curriculum data for BSCS, I need to analyze the 'subjects_by_year' field to see if it contains information for the 3rd year.",
+            "tool_call": {
+              "tool_name": "analyze_curriculum_data",
+              "parameters": {
+                "curriculum_data": "$curriculum_data_from_step_1",
+                "year_level": "3"
+              }
+            }
+          },
+          {
+            "step": 3,
+            "thought": "I have analyzed the curriculum data and checked for 3rd year subjects. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "what is the grade of daniel gomez",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for the grade of a person named Daniel Gomez. First, I must find the record for 'Daniel Gomez' to get their details like student_id. I will search all collections to be thorough.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "Daniel Gomez",
+                "document_filter": {
+                  "$and": [
+                    {
+                      "$contains": "Daniel"
+                    },
+                    {
+                      "$contains": "Gomez"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "Now that I have the student's details from Step 1, I must use placeholders to find their specific grade in the 'grades' collections.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "grades",
+                "query_text": "grade",
+                "filters": {
+                  "student_id": "$student_id_from_step_1"
+                }
+              }
+            }
+          },
+          {
+            "step": 3,
+            "thought": "I have found the student and their matching grade. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "what is the difference between chloe cruz and chloe santos",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for the difference between two individuals named Chloe Cruz and Chloe Santos. First, I need to find the records for both 'Chloe Cruz' and 'Chloe Santos' to get their details. I will search all collections to be thorough.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "Chloe Cruz",
+                "document_filter": {
+                  "$and": [
+                    {
+                      "$contains": "Chloe"
+                    },
+                    {
+                      "$contains": "Cruz"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "Now that I have the details for Chloe Cruz from Step 1, I need to find the details for Chloe Santos.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "Chloe Santos",
+                "document_filter": {
+                  "$and": [
+                    {
+                      "$contains": "Chloe"
+                    },
+                    {
+                      "$contains": "Santos"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "step": 3,
+            "thought": "I have found the records for both Chloe Cruz and Chloe Santos. I have all the information needed to compare and answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "who is the smartest student available",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for the smartest student available. To determine this, I need to find the student with the highest GWA (General Weighted Average) in the 'grades' collections.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "grades",
+                "query_text": "highest GWA",
+                "filters": {
+                  "gwa": {
+                    "$gt": 0
+                  }
+                },
+                "sort": {
+                  "gwa": -1
+                },
+                "limit": 1
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "I have retrieved the student with the highest GWA. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "who can i call in terms of emergencies",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for contact information in case of emergencies. I need to find the records of school administrators or board members who can be contacted during emergencies. I will search the 'faculty_school_admin_board_member' collection for relevant contacts.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "faculty",
+                "filters": {
+                  "$or": [
+                    {
+                      "admin_type": "Board Member"
+                    },
+                    {
+                      "position": "School Admin"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "I have retrieved the list of school administrators and board members. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "3rd year students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for information about 3rd year students. I need to find all students who are in their third year across all departments and programs.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "students",
+                "filters": {
+                  "year_level": "3"
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "I have retrieved the list of 3rd year students. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "who is deborah",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for information about a person named Deborah. I need to find the record for 'Deborah' to get their details. I will search all collections to be thorough.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "Deborah",
+                "document_filter": {
+                  "$contains": "Deborah"
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "I have found the record for Deborah. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "who are our teachers",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for information about our teachers. I need to find the records of all teaching faculty members across all departments.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "faculty",
+                "filters": {
+                  "faculty_type": "teaching"
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "I have retrieved the list of all teaching faculty members. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "give me a random student for each year",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for a random student from each year level. I need to find a random student for each year level (1, 2, 3) across all departments and programs.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "students",
+                "filters": {
+                  "year_level": "1"
+                },
+                "limit": 1,
+                "random": true
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "Now that I have a random student from the 1st year, I need to find a random student from the 2nd year.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "students",
+                "filters": {
+                  "year_level": "2"
+                },
+                "limit": 1,
+                "random": true
+              }
+            }
+          },
+          {
+            "step": 3,
+            "thought": "Now that I have a random student from the 2nd year, I need to find a random student from the 3rd year.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "students",
+                "filters": {
+                  "year_level": "3"
+                },
+                "limit": 1,
+                "random": true
+              }
+            }
+          },
+          {
+            "step": 4,
+            "thought": "I have retrieved a random student from each year level. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "give me random student for each course",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for a random student from each course. I need to find a random student for each course across all departments and programs.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "students",
+                "filters": {
+                  "program": "BSCS"
+                },
+                "limit": 1,
+                "random": true
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "Now that I have a random student from the BSCS program, I need to find a random student from the BSTM program.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "students",
+                "filters": {
+                  "program": "BSTM"
+                },
+                "limit": 1,
+                "random": true
+              }
+            }
+          },
+          {
+            "step": 3,
+            "thought": "I have retrieved a random student from each course. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "give me random student for each year available",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for a random student from each year level available. I need to find a random student for each year level (1, 2, 3) across all departments and programs.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "students",
+                "filters": {
+                  "year_level": "1"
+                },
+                "limit": 1,
+                "random": true
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "Now that I have a random student from the 1st year, I need to find a random student from the 2nd year.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "students",
+                "filters": {
+                  "year_level": "2"
+                },
+                "limit": 1,
+                "random": true
+              }
+            }
+          },
+          {
+            "step": 3,
+            "thought": "Now that I have a random student from the 2nd year, I need to find a random student from the 3rd year.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "students",
+                "filters": {
+                  "year_level": "3"
+                },
+                "limit": 1,
+                "random": true
+              }
+            }
+          },
+          {
+            "step": 4,
+            "thought": "I have retrieved a random student from each year level. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "highest gwa in school",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for the highest GWA in the school. To determine this, I need to find the student with the highest GWA (General Weighted Average) in the 'grades' collections.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "grades",
+                "query_text": "highest GWA",
+                "filters": {
+                  "gwa": {
+                    "$gt": 0
+                  }
+                },
+                "sort": {
+                  "gwa": -1
+                },
+                "limit": 1
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "I have retrieved the student with the highest GWA. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "all information about deborah",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for information about a person named Deborah. I need to find the record for 'Deborah' to get their details. I will search all collections to be thorough.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "Deborah",
+                "document_filter": {
+                  "$contains": "Deborah"
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "I have found the record for Deborah. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
