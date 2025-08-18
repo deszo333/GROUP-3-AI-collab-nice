@@ -588,6 +588,813 @@
           }
         ]
       }
+    },
+    {
+      "query": "is there any conflict with the schedule of john walker and alex bautista",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for the schedule of a person named John Walker. First, I must find the record for 'John Walker' to get their details like program, year, and section. I will search all collections to be thorough.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "John Walker",
+                "document_filter": {
+                  "$and": [
+                    {
+                      "$contains": "John"
+                    },
+                    {
+                      "$contains": "Walker"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "Now that I have the student's details from Step 1, I must use placeholders to find their specific schedule in the 'schedules' collections.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "schedules",
+                "query_text": "class schedule",
+                "filters": {
+                  "year_level": "$year_level_from_step_1",
+                  "section": "$section_from_step_1",
+                  "program": "$program_from_step_1"
+                }
+              }
+            }
+          },
+          {
+            "step": 3,
+            "thought": "The user is asking for the schedule of a person named Alex Bautista. First, I must find the record for 'Alex Bautista' to get their details like program, year, and section. I will search all collections to be thorough.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "Alex Bautista",
+                "document_filter": {
+                  "$and": [
+                    {
+                      "$contains": "Alex"
+                    },
+                    {
+                      "$contains": "Bautista"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "step": 4,
+            "thought": "Now that I have the student's details from Step 3, I must use placeholders to find their specific schedule in the 'schedules' collections.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "schedules",
+                "query_text": "class schedule",
+                "filters": {
+                  "year_level": "$year_level_from_step_3",
+                  "section": "$section_from_step_3",
+                  "program": "$program_from_step_3"
+                }
+              }
+            }
+          },
+          {
+            "step": 5,
+            "thought": "I have found the schedules for both John Walker and Alex Bautista. I have all the information needed to compare and answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "does Alex Bautista and john walker share a room in their schedules",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking if Alex Bautista and John Walker share a room in their schedules. First, I need to find the records for both 'Alex Bautista' and 'John Walker' to get their details like program, year, and section. I will search all collections to be thorough.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "Alex Bautista",
+                "document_filter": {
+                  "$and": [
+                    {
+                      "$contains": "Alex"
+                    },
+                    {
+                      "$contains": "Bautista"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "Now that I have the student's details from Step 1, I must use placeholders to find their specific schedule in the 'schedules' collections.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "schedules",
+                "query_text": "class schedule",
+                "filters": {
+                  "year_level": "$year_level_from_step_1",
+                  "section": "$section_from_step_1",
+                  "program": "$program_from_step_1"
+                }
+              }
+            }
+          },
+          {
+            "step": 3,
+            "thought": "The user is asking for the schedule of a person named John Walker. First, I must find the record for 'John Walker' to get their details like program, year, and section. I will search all collections to be thorough.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "John Walker",
+                "document_filter": {
+                  "$and": [
+                    {
+                      "$contains": "John"
+                    },
+                    {
+                      "$contains": "Walker"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "step": 4,
+            "thought": "Now that I have the student's details from Step 3, I must use placeholders to find their specific schedule in the 'schedules' collections.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "schedules",
+                "query_text": "class schedule",
+                "filters": {
+                  "year_level": "$year_level_from_step_3",
+                  "section": "$section_from_step_3",
+                  "program": "$program_from_step_3"
+                }
+              }
+            }
+          },
+          {
+            "step": 5,
+            "thought": "I have found the schedules for both Alex Bautista and John Walker. I have all the information needed to compare and answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "list down all data",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking to list down all data available in the database. I need to retrieve all records from all collections.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "all data"
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "I have retrieved all records from all collections. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "who handles the most advisory class",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking who handles the most advisory classes. To determine this, I need to find all faculty members and count the number of advisory classes they handle. I will search the 'schedules' collections to gather the necessary data.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "schedules",
+                "query_text": "advisory class schedule"
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "I have retrieved all possible schedule documents. The plan is complete, and the final synthesizer will now analyze the results to find the answer.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "schedule of daniel gomez",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for the schedule of a person named Daniel Gomez. First, I must find the record for 'Daniel Gomez' to get their details like program, year, and section. I will search all collections to be thorough.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "Daniel Gomez",
+                "document_filter": {
+                  "$and": [
+                    {
+                      "$contains": "Daniel"
+                    },
+                    {
+                      "$contains": "Gomez"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "Now that I have the student's details from Step 1, I must use placeholders to find their specific schedule in the 'schedules' collections.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "schedules",
+                "query_text": "class schedule",
+                "filters": {
+                  "year_level": "$year_level_from_step_1",
+                  "section": "$section_from_step_1",
+                  "program": "$program_from_step_1"
+                }
+              }
+            }
+          },
+          {
+            "step": 3,
+            "thought": "I have found the student and their matching schedule. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "bscs schedule",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for the schedule of the BSCS program. To find this, I need to gather all student records for the BSCS program, extract the distinct combinations of program, year_level, and section, and then query schedules for each unique combination.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "students",
+                "filters": {
+                  "program": "BSCS"
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "Now that I have all BSCS student records from Step 1, I need to extract the distinct combinations of program, year_level, and section to query the schedules for each unique combination.",
+            "tool_call": {
+              "tool_name": "extract_distinct_combinations",
+              "parameters": {
+                "student_records": "$student_records_from_step_1"
+              }
+            }
+          },
+          {
+            "step": 3,
+            "thought": "With the distinct combinations from Step 2, I will now query the schedules for each unique combination of program, year_level, and section.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "schedules",
+                "query_text": "class schedule",
+                "filters": {
+                  "program": "$program_from_step_2",
+                  "year_level": "$year_level_from_step_2",
+                  "section": "$section_from_step_2"
+                }
+              }
+            }
+          },
+          {
+            "step": 4,
+            "thought": "I have retrieved the schedules for all distinct combinations of BSCS program, year_level, and section. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "bscs schedules",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for the schedules of the BSCS program. To find this, I need to gather all student records for the BSCS program, extract the distinct combinations of program, year_level, and section, and then query schedules for each unique combination.",
+            "tool_call": {
+              "tool_name": "get_distinct_combinations",
+              "parameters": {
+                "collection_filter": "students",
+                "fields": [
+                  "program",
+                  "year_level",
+                  "section"
+                ],
+                "filters": {
+                  "program": "BSCS"
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "With the distinct combinations from Step 1, I will now query the schedules for each unique combination of program, year_level, and section.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "schedules",
+                "query_text": "class schedule",
+                "filters": {
+                  "program": "$program_from_step_1",
+                  "year_level": "$year_level_from_step_1",
+                  "section": "$section_from_step_1"
+                }
+              }
+            }
+          },
+          {
+            "step": 3,
+            "thought": "I have retrieved the schedules for all distinct combinations of BSCS program, year_level, and section. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "what is the schedule of librarian",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for the schedule of the librarian. First, I need to find the record of the librarian to get their details. I will search the 'faculty_library_non_teaching' collection for the librarian's information.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "faculty_library_non_teaching",
+                "filters": {
+                  "position": "Librarian"
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "Now that I have the librarian's details from Step 1, I need to find their schedule in the 'faculty_library_non_teaching_schedule' collection.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "faculty_library_non_teaching_schedule",
+                "query_text": "schedule",
+                "filters": {
+                  "staff_name": "$full_name_from_step_1"
+                }
+              }
+            }
+          },
+          {
+            "step": 3,
+            "thought": "I have found the librarian and their matching schedule. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "Who advises the 2nd year BSCS students?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for the adviser of 2nd year BSCS students. To find this, I need to gather all schedule records for the BSCS program and 2nd year level, and then extract the adviser information.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "schedules",
+                "query_text": "class schedule",
+                "filters": {
+                  "program": "BSCS",
+                  "year_level": "2"
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "I have retrieved the schedules for 2nd year BSCS students. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "Is the adviser for the second-year students a permanent employee?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking if the adviser for the second-year students is a permanent employee. To find this, I need to gather all schedule records for the second-year students, extract the adviser information, and then check the employment status of the adviser.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "schedules",
+                "query_text": "class schedule",
+                "filters": {
+                  "year_level": "2"
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "Now that I have the schedules for second-year students from Step 1, I need to extract the adviser information and check their employment status.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "faculty",
+                "query_text": "faculty details",
+                "filters": {
+                  "full_name": "$adviser_from_step_1"
+                }
+              }
+            }
+          },
+          {
+            "step": 3,
+            "thought": "I have retrieved the adviser's details. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "who is the adviser of bscs year 2 section a",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for the adviser of BSCS Year 2 Section A students. To find this, I need to gather all schedule records for the BSCS program, 2nd year level, and Section A, and then extract the adviser information.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "schedules",
+                "query_text": "class schedule",
+                "filters": {
+                  "program": "BSCS",
+                  "year_level": "2",
+                  "section": "A"
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "I have retrieved the schedules for BSCS Year 2 Section A students. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "Find a first-year student with the last name \"Cruz\" and tell me who their adviser is.",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for a first-year student with the last name 'Cruz' and their adviser. First, I need to find the record for a first-year student with the last name 'Cruz' to get their details like program, year, and section. I will search all collections to be thorough.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "students",
+                "filters": {
+                  "year_level": "1",
+                  "surname": "Cruz"
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "Now that I have the student's details from Step 1, I must use placeholders to find their specific schedule in the 'schedules' collections.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "schedules",
+                "query_text": "class schedule",
+                "filters": {
+                  "year_level": "$year_level_from_step_1",
+                  "section": "$section_from_step_1",
+                  "program": "$program_from_step_1"
+                }
+              }
+            }
+          },
+          {
+            "step": 3,
+            "thought": "I have found the student and their matching schedule. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "I need the contact info for the permanent faculty member who advises the second-year computer science students.",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for the contact information of the permanent faculty member who advises the second-year computer science (BSCS) students. First, I need to find the adviser for the second-year BSCS students.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "schedules",
+                "query_text": "class schedule",
+                "filters": {
+                  "program": "BSCS",
+                  "year_level": "2"
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "Now that I have the adviser's name from Step 1, I need to find the contact information of this adviser. I will search the faculty collections for the adviser's details.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "faculty",
+                "query_text": "faculty details",
+                "filters": {
+                  "full_name": "$adviser_from_step_1",
+                  "employment_status": "Permanent"
+                }
+              }
+            }
+          },
+          {
+            "step": 3,
+            "thought": "I have retrieved the contact information of the permanent faculty member who advises the second-year BSCS students. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "Provide a summary of all faculty members who are not contractual employees and any schedule information you have for them.",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for a summary of all faculty members who are not contractual employees and any schedule information available for them. I need to find all faculty members who are not contractual and then gather their schedule information.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "faculty",
+                "filters": {
+                  "employment_status": {
+                    "$ne": "Contractual"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "Now that I have the list of non-contractual faculty members from Step 1, I need to gather their schedule information. I will search the relevant schedule collections based on their roles.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "schedules",
+                "query_text": "schedule",
+                "filters": {
+                  "$or": [
+                    {
+                      "adviser": {
+                        "$in": "$full_name_from_step_1"
+                      }
+                    },
+                    {
+                      "staff_name": {
+                        "$in": "$full_name_from_step_1"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "step": 3,
+            "thought": "I have retrieved the schedule information for the non-contractual faculty members. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "Who are the students named on the schedule advised by Dr. Deborah?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for the students advised by Dr. Deborah. First, I need to resolve the entity 'Dr. Deborah' to get all possible aliases for her name.",
+            "tool_call": {
+              "tool_name": "resolve_person_entity",
+              "parameters": {
+                "name": "Dr. Deborah"
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "Now that I have the aliases for Dr. Deborah from Step 1, I need to find all schedules where any of these aliases are listed as the adviser.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "schedules",
+                "query_text": "class schedule",
+                "filters": {
+                  "adviser": {
+                    "$in": "$aliases_from_step_1"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "step": 3,
+            "thought": "I have found the schedules advised by Dr. Deborah. Now, I need to extract the student details from these schedules.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "students",
+                "filters": {
+                  "program": "$program_from_step_2",
+                  "year_level": "$year_level_from_step_2",
+                  "section": "$section_from_step_2"
+                }
+              }
+            }
+          },
+          {
+            "step": 4,
+            "thought": "I have retrieved the list of students advised by Dr. Deborah. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "Why does Trevor Clark have a separate work schedule document while Deborah Lewis does not?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking why Trevor Clark has a separate work schedule document while Deborah Lewis does not. To answer this, I need to find the records for both 'Trevor Clark' and 'Deborah Lewis' to understand their roles and the nature of their schedules.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "Trevor Clark",
+                "document_filter": {
+                  "$and": [
+                    {
+                      "$contains": "Trevor"
+                    },
+                    {
+                      "$contains": "Clark"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "Now that I have the record for Trevor Clark from Step 1, I need to find the record for Deborah Lewis to compare their roles and schedules.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "Deborah Lewis",
+                "document_filter": {
+                  "$and": [
+                    {
+                      "$contains": "Deborah"
+                    },
+                    {
+                      "$contains": "Lewis"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "step": 3,
+            "thought": "I have found the records for both Trevor Clark and Deborah Lewis. I have all the information needed to compare their roles and schedules and answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "query": "I'm a second-year student and I need some help with a research paper. Who should I talk to and are they a professor?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is a second-year student who needs help with a research paper. I need to find the adviser for second-year students to determine who they should talk to.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "schedules",
+                "query_text": "class schedule",
+                "filters": {
+                  "year_level": "2"
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "Now that I have the adviser's name from Step 1, I need to find the details of this adviser to check if they are a professor.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "faculty",
+                "query_text": "faculty details",
+                "filters": {
+                  "full_name": "$adviser_from_step_1"
+                }
+              }
+            }
+          },
+          {
+            "step": 3,
+            "thought": "I have retrieved the details of the adviser. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      }
     }
   ]
 }

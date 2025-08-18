@@ -11773,6 +11773,12 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
         """Main menu to launch the AI Analyst."""
         if not self.data_loaded:
             if not self.quick_setup(): return
+             
+            
+        # This finds the directory where your main script is located.
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        # This creates a full, reliable path to your config file.
+        config_path = os.path.join(script_dir, "config.json")
         
         while True:
             self.show_search_options()
@@ -11782,7 +11788,7 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
                 if choice == "1":
                     # This is the new integration point from the README
                     print("🚀 Initializing AI School Analyst...")
-                    llm_cfg = load_llm_config("config.json")
+                    llm_cfg = load_llm_config(mode=self.api_mode) 
                     ai = AIAnalyst(self.collections, llm_cfg)
                     ai.start_ai_analyst()
 
