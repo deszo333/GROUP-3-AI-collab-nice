@@ -16,7 +16,6 @@ import json # 🆕 ADD THIS IMPORT
 from ai_analyst import AIAnalyst, load_llm_config
 
 warnings.filterwarnings("ignore", category=FutureWarning)
-warnings.filterwarnings("ignore", category=FutureWarning)
 
 class SmartStudentDataSystem:
     def __init__(self):
@@ -31,10 +30,9 @@ class SmartStudentDataSystem:
         self.data_loaded = False
         self.debug_mode = False  # Set to False for clean, user-facing output
         self.api_mode = 'online' # Options: 'online' or 'offline'
-
         
         
-        # ======================== HELPER FUNCTIONS ========================   
+    # ======================== HELPER FUNCTIONS ========================   
     def debug(self, message):
         """A helper function to print messages only when debug mode is ON."""
         if self.debug_mode:
@@ -81,6 +79,7 @@ class SmartStudentDataSystem:
                 break
         print("\n↩️ Returning to main menu...")
             
+        
         
         
     # ======================== INITIALIZATION & SETUP ========================
@@ -4541,9 +4540,11 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
                 extracted_data = self.extract_student_cor_pdf_info(filename)
             elif data_type == 'teaching_faculty_resume_pdf':
                 extracted_data = self.extract_teaching_faculty_resume_pdf_info(filename)
-            # ADD THIS NEW CASE:
             elif data_type == 'non_teaching_faculty_resume_pdf':
                 extracted_data = self.extract_non_teaching_faculty_resume_pdf_info(filename)
+            # ADD THIS NEW CASE:
+            elif data_type == 'student_grades_pdf':
+                extracted_data = self.extract_student_grades_pdf_info(filename)
             else:
                 print(f"❌ Unknown data type: {data_type}")
                 return False
@@ -4575,16 +4576,21 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
             file_extension = os.path.splitext(filename)[1].lower()
             
             if file_extension == '.pdf':
-                print(f"🔍 Extracting from PDF for duplicate check...")
+                print(f"📋 Extracting from PDF for duplicate check...")
                 
                 # Check if it's a Student COR PDF first
                 if self.is_student_cor_pdf(filename):
-                    print(f"🔍 Processing as Student COR PDF for duplicate check...")
+                    print(f"📋 Processing as Student COR PDF for duplicate check...")
                     return self.extract_student_cor_pdf_info(filename)
                 
-                # NEW: Check if it's a Teaching Faculty Resume PDF
+                # NEW: Check if it's a Student Grades PDF
+                elif self.is_student_grades_pdf(filename):
+                    print(f"📋 Processing as Student Grades PDF for duplicate check...")
+                    return self.extract_student_grades_pdf_info(filename)
+                
+                # Check if it's a Teaching Faculty Resume PDF
                 elif self.is_teaching_faculty_resume_pdf(filename):
-                    print(f"🔍 Processing as Teaching Faculty Resume PDF for duplicate check...")
+                    print(f"📋 Processing as Teaching Faculty Resume PDF for duplicate check...")
                     return self.extract_teaching_faculty_resume_pdf_info(filename)
                 
                 # Extract text from PDF for regular student data
@@ -4844,6 +4850,18 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
                 print(f"   📊 Student Grades: {metadata['student_name']} ({metadata['course']}) - {metadata['total_subjects']} subjects")
                 return metadata
             
+            elif data_type == 'student_grades_pdf':
+                metadata = {
+                    'student_number': str(extracted_data['student_info'].get('student_number', '')).strip(),
+                    'student_name': str(extracted_data['student_info'].get('student_name', '')).strip(),
+                    'course': str(extracted_data['student_info'].get('course', '')).strip().upper(),
+                    'total_subjects': len(extracted_data.get('grades', [])),
+                    'gwa': str(extracted_data['student_info'].get('gwa', '')).strip(),
+                    'data_type': 'student_grades_pdf'
+                }
+                print(f"   📊 Student Grades PDF: {metadata['student_name']} ({metadata['course']}) - {metadata['total_subjects']} subjects")
+                return metadata
+            
             else:
                 print(f"   ⚠️ Unknown data type: {data_type}")
                 return {'data_type': data_type}
@@ -4891,9 +4909,11 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
                     return self.process_cor_pdf(filename)
                 elif data_type == 'teaching_faculty_resume_pdf':
                     return self.process_teaching_faculty_resume_pdf(filename)
-                # ADD THIS NEW CASE:
                 elif data_type == 'non_teaching_faculty_resume_pdf':
                     return self.process_non_teaching_faculty_resume_pdf(filename)
+                # ADD THIS NEW CASE:
+                elif data_type == 'student_grades_pdf':
+                    return self.process_student_grades_pdf(filename)
                 elif data_type in ['teaching_faculty', 'admin', 'non_teaching_faculty']:
                     return self.process_faculty_pdf(filename)
                 elif data_type in ['teaching_faculty_schedule', 'non_teaching_faculty_schedule']:
@@ -5093,6 +5113,608 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
                         
         except Exception as e:
             print(f"   ❌ Error displaying data: {e}")
+            
+    def is_student_grades_pdf(self, filename):
+        """Check if PDF is a Student Grades file"""
+        try:
+            doc = fitz.open(filename)
+            first_page = doc[0].get_text().lower()
+            doc.close()
+            
+            # Student grades indicators
+            grades_indicators = [
+                "student number", "student name", "subject code", "subject description",
+                "units", "equivalent", "grade", "grades", "remarks", "gwa",
+                "academic record", "transcript", "grading", "final grade"
+            ]
+            
+            # Grade-specific patterns
+            grade_patterns = [
+                "1.0", "1.25", "1.5", "1.75", "2.0", "2.25", "2.5", "2.75", "3.0",
+                "passed", "failed", "incomplete", "dropped"
+            ]
+            
+            # Count indicators
+            grades_indicator_count = sum(1 for indicator in grades_indicators if indicator in first_page)
+            has_grade_patterns = any(pattern in first_page for pattern in grade_patterns)
+            
+            # Should NOT have faculty or schedule indicators
+            faculty_indicators = ["faculty", "professor", "instructor", "adviser", "schedule", "time", "room"]
+            curriculum_indicators = ["curriculum", "course curriculum", "syllabus"]
+            
+            has_faculty_indicator = any(indicator in first_page for indicator in faculty_indicators)
+            has_curriculum_indicator = any(indicator in first_page for indicator in curriculum_indicators)
+            
+            # Grades detection logic
+            is_grades = (
+                grades_indicator_count >= 3 and
+                has_grade_patterns and
+                not has_faculty_indicator and
+                not has_curriculum_indicator
+            )
+            
+            print(f"📄 Student Grades PDF detection for {filename}:")
+            print(f"   Grades indicators: {grades_indicator_count}")
+            print(f"   Has grade patterns: {has_grade_patterns}")
+            print(f"   Final result: {is_grades}")
+            
+            return is_grades
+            
+        except Exception as e:
+            print(f"❌ Error checking Student Grades PDF: {e}")
+            return False
+        
+    def extract_student_grades_pdf_info(self, filename):
+        """Extract Student Grades information from PDF"""
+        try:
+            doc = fitz.open(filename)
+            full_text = ""
+            for page in doc:
+                full_text += page.get_text() + "\n"
+            doc.close()
+            
+            print(f"📋 Extracting Student Grades from PDF: {filename}")
+            
+            # STEP 1: Extract student metadata (name, course, etc.)
+            student_info = self.extract_grades_student_metadata_pdf(full_text, filename)
+            print(f"📋 Extracted Student Info: {student_info}")
+            
+            # STEP 2: Extract grade records
+            grades_data = self.extract_grades_records_pdf(full_text)
+            print(f"📋 Found {len(grades_data)} grade records")
+            
+            return {
+                'student_info': student_info,
+                'grades': grades_data
+            }
+            
+        except Exception as e:
+            print(f"❌ Error extracting Student Grades PDF: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
+        
+    def extract_grades_records_pdf(self, full_text):
+        """Enhanced extraction of individual grade records from PDF text"""
+        lines = [line.strip() for line in full_text.split('\n') if line.strip()]
+        grades_data = []
+        
+        # Find the header area - look for grade table structure
+        header_row = -1
+        for i, line in enumerate(lines):
+            line_upper = line.upper()
+            # Look for patterns that indicate a grades table
+            if ('SUBJECT' in line_upper and ('CODE' in line_upper or 'DESCRIPTION' in line_upper)) or \
+            ('COURSE' in line_upper and ('TITLE' in line_upper or 'DESCRIPTION' in line_upper)) or \
+            (line_upper.count('UNITS') > 0 and line_upper.count('GRADE') > 0):
+                header_row = i
+                print(f"🎯 Found grades header at line {i}: {line}")
+                break
+        
+        if header_row == -1:
+            print("⚠️ Could not find grades header - trying alternative approach")
+            # Alternative: look for first line that looks like a subject code
+            for i, line in enumerate(lines):
+                if re.match(r'^[A-Z]{2,5}\s*\d{3}[A-Z]?', line.strip()):
+                    header_row = i - 1  # Assume header is one line before
+                    print(f"🎯 Found subject data starting at line {i}, assuming header at {header_row}")
+                    break
+        
+        if header_row == -1:
+            print("❌ Could not locate grades data structure")
+            return []
+        
+        # NEW APPROACH: Extract complete grade records by grouping related lines
+        current_subject = {}
+        i = header_row + 1
+        
+        while i < len(lines):
+            line = lines[i].strip()
+            
+            # Skip empty lines
+            if not line:
+                i += 1
+                continue
+            
+            # Stop at footer/summary lines
+            if any(keyword in line.upper() for keyword in ['TOTAL UNITS', 'GWA', 'AVERAGE', 'SUMMARY', 'GENERATED', 'TRANSCRIPT']):
+                print(f"🛑 Stopping at footer line: {line}")
+                break
+            
+            # Check if this line is a subject code
+            if re.match(r'^[A-Z]{2,5}\s*\d{3}[A-Z]?$', line):
+                # Save previous subject if complete
+                if current_subject and self.is_complete_grade_record(current_subject):
+                    grades_data.append(current_subject.copy())
+                    print(f"📚 Added complete grade: {current_subject.get('subject_code', 'N/A')} - {current_subject.get('equivalent', 'N/A')}")
+                
+                # Start new subject
+                current_subject = {
+                    'subject_code': line,
+                    'subject_description': '',
+                    'units': '',
+                    'equivalent': '',
+                    'remarks': ''
+                }
+                print(f"🔍 Started new subject: {line}")
+            
+            # Check if this line is a description (follows subject code)
+            elif current_subject.get('subject_code') and not current_subject.get('subject_description'):
+                if len(line) > 5 and not re.match(r'^\d+(\.\d+)?$', line):
+                    current_subject['subject_description'] = line.title()
+                    print(f"   📝 Added description: {line}")
+            
+            # Check if this line contains units (single digit 1-6)
+            elif current_subject.get('subject_code') and re.match(r'^[1-6]$', line):
+                if not current_subject.get('units'):
+                    current_subject['units'] = line
+                    print(f"   📊 Added units: {line}")
+            
+            # Check if this line contains a grade
+            elif current_subject.get('subject_code') and self.is_valid_grade_format(line):
+                if not current_subject.get('equivalent'):
+                    current_subject['equivalent'] = line
+                    print(f"   🎯 Added grade: {line}")
+            
+            # Check if this line contains grade and remarks together (like "1.5 Passed")
+            elif current_subject.get('subject_code'):
+                parts = line.split()
+                if len(parts) >= 2:
+                    # First part might be grade, second part might be remarks
+                    if self.is_valid_grade_format(parts[0]) and not current_subject.get('equivalent'):
+                        current_subject['equivalent'] = parts[0]
+                        print(f"   🎯 Added grade from combined line: {parts[0]}")
+                    
+                    if parts[-1].upper() in ['PASSED', 'FAILED', 'INCOMPLETE', 'DROPPED'] and not current_subject.get('remarks'):
+                        current_subject['remarks'] = parts[-1].upper()
+                        print(f"   ✅ Added remarks from combined line: {parts[-1]}")
+            
+            i += 1
+        
+        # Don't forget the last subject
+        if current_subject and self.is_complete_grade_record(current_subject):
+            grades_data.append(current_subject.copy())
+            print(f"📚 Added final grade: {current_subject.get('subject_code', 'N/A')} - {current_subject.get('equivalent', 'N/A')}")
+        
+        # Remove duplicate entries (common in PDF parsing)
+        unique_grades = self.remove_duplicate_grade_entries(grades_data)
+        print(f"📋 Removed {len(grades_data) - len(unique_grades)} duplicate entries")
+        
+        return unique_grades
+    
+    def is_complete_grade_record(self, grade_record):
+        """Check if a grade record has the minimum required information"""
+        if not grade_record:
+            return False
+        
+        # Must have subject code and either description or grade
+        has_subject = grade_record.get('subject_code') and len(grade_record['subject_code']) > 0
+        has_description = grade_record.get('subject_description') and len(grade_record['subject_description']) > 0
+        has_grade = grade_record.get('equivalent') and len(grade_record['equivalent']) > 0
+        
+        return has_subject and (has_description or has_grade)
+    
+    def remove_duplicate_grade_entries(self, grades_data):
+        """Enhanced duplicate removal that handles various PDF parsing artifacts"""
+        unique_grades = []
+        seen_subjects = set()
+        
+        for grade in grades_data:
+            # Create a unique identifier for this subject
+            subject_code = grade.get('subject_code', '').strip()
+            subject_desc = grade.get('subject_description', '').strip()
+            
+            # Skip if no meaningful subject identifier
+            if not subject_code:
+                continue
+            
+            # Create composite key
+            subject_key = f"{subject_code}_{subject_desc}".upper()
+            
+            # Skip if we've seen this exact subject before
+            if subject_key in seen_subjects:
+                print(f"   🗑️ Skipping duplicate: {subject_code} - {subject_desc}")
+                continue
+            
+            # Skip entries that are just headers or incomplete data
+            if (subject_desc.upper() in ['EQUIVALENT', 'REMARKS', 'UNITS', 'GRADE', 'SUBJECT DESCRIPTION'] or
+                subject_code.upper() in ['CODE', 'SUBJECT']):
+                print(f"   🗑️ Skipping header data: {grade}")
+                continue
+            
+            seen_subjects.add(subject_key)
+            
+            # Set default values for missing fields
+            if not grade.get('units'):
+                grade['units'] = '3'  # Default units
+            if not grade.get('remarks'):
+                grade['remarks'] = 'PASSED'  # Default status
+            
+            unique_grades.append(grade)
+            print(f"   ✅ Kept unique grade: {subject_code} - {grade.get('equivalent', 'N/A')}")
+        
+        return unique_grades
+    
+    def is_valid_grade_entry(self, grade_entry):
+        """Validate if a grade entry has sufficient information"""
+        if not grade_entry:
+            return False
+        
+        # Must have either subject code OR subject description
+        has_subject_info = (grade_entry.get('subject_code') and len(grade_entry['subject_code']) > 0) or \
+                        (grade_entry.get('subject_description') and len(grade_entry['subject_description']) > 3)
+        
+        # Should have some meaningful data
+        has_meaningful_data = any([
+            grade_entry.get('equivalent'),
+            grade_entry.get('units'),
+            grade_entry.get('remarks')
+        ])
+        
+        return has_subject_info and has_meaningful_data
+    
+    def parse_grade_line_pdf_enhanced(self, line, all_lines, line_index):
+        """Enhanced parsing of a single line of grade data from PDF"""
+        grade_entry = {
+            'subject_code': '',
+            'subject_description': '',
+            'units': '',
+            'equivalent': '',
+            'remarks': ''
+        }
+        
+        print(f"🔍 Parsing line {line_index}: '{line}'")
+        
+        # Strategy 1: Look for subject code at the beginning
+        subject_code_match = re.search(r'^([A-Z]{2,5}\s?\d{3}[A-Z]?)', line)
+        if subject_code_match:
+            grade_entry['subject_code'] = subject_code_match.group(1).strip()
+            remaining_line = line[subject_code_match.end():].strip()
+            print(f"   ✅ Found subject code: {grade_entry['subject_code']}")
+            
+            # Parse the remaining line for other components
+            parts = re.split(r'\s{2,}|\t', remaining_line)  # Split on multiple spaces or tabs
+            
+            # Extract description (usually the longest text part)
+            description_candidates = [part for part in parts if len(part) > 5 and not re.match(r'^\d+(\.\d+)?$', part)]
+            if description_candidates:
+                # Take the first substantial text as description
+                grade_entry['subject_description'] = description_candidates[0].strip()
+                print(f"   ✅ Found description: {grade_entry['subject_description']}")
+            
+            # Extract units (look for small numbers 1-6)
+            for part in parts:
+                if re.match(r'^[1-6]$', part.strip()):
+                    grade_entry['units'] = part.strip()
+                    print(f"   ✅ Found units: {grade_entry['units']}")
+                    break
+            
+            # Extract grade (look for grade patterns)
+            for part in parts:
+                if self.is_valid_grade_format(part.strip()):
+                    grade_entry['equivalent'] = part.strip()
+                    print(f"   ✅ Found grade: {grade_entry['equivalent']}")
+                    break
+            
+            # Extract remarks
+            for part in parts:
+                if any(status in part.upper() for status in ['PASSED', 'FAILED', 'INCOMPLETE', 'DROPPED', 'INC', 'DRP']):
+                    grade_entry['remarks'] = part.strip().upper()
+                    print(f"   ✅ Found remarks: {grade_entry['remarks']}")
+                    break
+            
+            return grade_entry
+        
+        # Strategy 2: Check if this line contains only a description (follow-up to previous subject code)
+        elif len(line) > 10 and not any(char.isdigit() for char in line[:5]):  # Long text, no numbers at start
+            # This might be a subject description on its own line
+            if re.search(r'^[A-Za-z][A-Za-z\s,&\-]{10,}$', line):
+                grade_entry['subject_description'] = line.strip().title()
+                print(f"   📝 Found standalone description: {grade_entry['subject_description']}")
+                return grade_entry
+        
+        # Strategy 3: Look for lines with grades but no subject code (continuation lines)
+        elif self.contains_grade_data(line):
+            parts = re.split(r'\s{2,}|\t', line)
+            
+            # Extract any grade information we can find
+            for part in parts:
+                part = part.strip()
+                if self.is_valid_grade_format(part):
+                    grade_entry['equivalent'] = part
+                elif re.match(r'^[1-6]$', part):
+                    grade_entry['units'] = part
+                elif any(status in part.upper() for status in ['PASSED', 'FAILED', 'INCOMPLETE']):
+                    grade_entry['remarks'] = part.upper()
+            
+            if grade_entry['equivalent'] or grade_entry['units']:
+                print(f"   📊 Found grade data: Grade={grade_entry.get('equivalent', 'N/A')}, Units={grade_entry.get('units', 'N/A')}")
+                return grade_entry
+        
+        print(f"   ❌ No valid grade data found in line")
+        return None
+    
+    def contains_grade_data(self, line):
+        """Check if line contains grade-related data"""
+        line_upper = line.upper()
+        
+        # Look for grade patterns
+        has_numeric_grade = bool(re.search(r'\b[1-5]\.\d{1,2}\b', line))
+        has_units = bool(re.search(r'\b[1-6]\b', line))
+        has_status = any(status in line_upper for status in ['PASSED', 'FAILED', 'INCOMPLETE', 'DROPPED'])
+        
+        return has_numeric_grade or has_units or has_status
+    
+    def is_valid_grade_format(self, text):
+        """Check if text represents a valid grade format"""
+        if not text:
+            return False
+        
+        # Numeric grades (1.0 - 5.0)
+        try:
+            grade_float = float(text)
+            return 1.0 <= grade_float <= 5.0
+        except ValueError:
+            pass
+        
+        # Letter grades or status
+        text_upper = text.upper().strip()
+        valid_non_numeric = ['A', 'B', 'C', 'D', 'F', 'P', 'INC', 'DRP', 'PASSED', 'FAILED', 'INCOMPLETE', 'DROPPED']
+        return text_upper in valid_non_numeric
+    
+    def parse_grade_line_pdf(self, line):
+        """Parse a single line of grade data from PDF"""
+        grade_entry = {
+            'subject_code': '',
+            'subject_description': '',
+            'units': '',
+            'equivalent': '',
+            'remarks': ''
+        }
+        
+        # Try to extract subject code (usually at the beginning)
+        code_match = re.search(r'^([A-Z]{2,5}\s?\d{3}[A-Z]?)', line)
+        if code_match:
+            grade_entry['subject_code'] = code_match.group(1).strip()
+            remaining_line = line[code_match.end():].strip()
+        else:
+            remaining_line = line
+        
+        # Extract grade (1.0-5.0 pattern)
+        grade_match = re.search(r'\b([1-5]\.\d{1,2})\b', remaining_line)
+        if grade_match:
+            grade_entry['equivalent'] = grade_match.group(1)
+        
+        # Extract units (typically 1-6 digits)
+        units_match = re.search(r'\b([1-6])\b', remaining_line)
+        if units_match:
+            grade_entry['units'] = units_match.group(1)
+        
+        # Extract description (longest text segment)
+        desc_parts = re.findall(r'[A-Za-z][A-Za-z\s]{10,}', remaining_line)
+        if desc_parts:
+            grade_entry['subject_description'] = desc_parts[0].strip().title()
+        
+        # Extract remarks
+        if any(status in line.upper() for status in ['PASSED', 'FAILED', 'INCOMPLETE', 'DROPPED']):
+            for status in ['PASSED', 'FAILED', 'INCOMPLETE', 'DROPPED']:
+                if status in line.upper():
+                    grade_entry['remarks'] = status
+                    break
+        else:
+            grade_entry['remarks'] = 'PASSED' if grade_entry['equivalent'] else 'N/A'
+        
+        return grade_entry
+    
+    def extract_grades_student_metadata_pdf(self, full_text, filename):
+        """Extract student metadata from grades PDF file"""
+        lines = [line.strip() for line in full_text.split('\n') if line.strip()]
+        
+        student_info = {
+            'student_number': '',
+            'student_name': '',
+            'course': '',
+            'gwa': ''
+        }
+        
+        # Enhanced patterns for PDF extraction
+        patterns = {
+            'student_number': [
+                r'(?:STUDENT\s*(?:NUMBER|NO|ID))\s*[:\-]?\s*([A-Z0-9-]+)',
+                r'\b([A-Z]{2,4}-\d{4,6}-?\d*)\b',
+                r'\b(\d{4,8})\b',
+            ],
+            'student_name': [
+                r'(?:STUDENT\s*NAME|NAME)\s*[:\-]?\s*([A-Z][A-Za-z\s\.,-]+?)(?:\s*(?:STUDENT|ID|YEAR|COURSE|SECTION|CONTACT|$))',
+                r'^([A-Z][a-z]+(?:[\s,\.]+[A-Z][a-z]+){1,})\s*$',
+            ],
+            'course': [
+                r'(?:COURSE|PROGRAM|DEGREE)\s*[:\-]?\s*(BS[A-Z]{2,4}|AB[A-Z]*|B[A-Z]{2,4})',
+                r'\b(BSCS|BSIT|BSHM|BSTM|BSOA|BECED|BTLE)\b',
+            ],
+            'gwa': [
+                r'(?:GWA|GENERAL\s*WEIGHTED\s*AVERAGE)\s*[:\-]?\s*([1-5]\.\d{2})',
+                r'(?:AVERAGE)\s*[:\-]?\s*([1-5]\.\d{2})',
+            ]
+        }
+        
+        all_text = ' '.join(lines).upper()
+        
+        # Extract each field using patterns
+        for field, field_patterns in patterns.items():
+            if student_info[field]:
+                continue
+            
+            for pattern in field_patterns:
+                matches = re.findall(pattern, all_text, re.IGNORECASE | re.MULTILINE)
+                if matches:
+                    extracted_value = matches[0]
+                    if isinstance(extracted_value, tuple):
+                        extracted_value = next((v for v in reversed(extracted_value) if v), '')
+                    
+                    cleaned_value = self.clean_grades_pdf_value(extracted_value.strip(), field)
+                    if cleaned_value:
+                        student_info[field] = cleaned_value
+                        print(f"   🎯 Found {field}: {cleaned_value}")
+                        break
+        
+        # Fallback: infer course from filename if missing
+        if not student_info['course']:
+            filename_course = self.extract_course_from_filename(filename)
+            if filename_course:
+                student_info['course'] = filename_course
+                print(f"   🎯 Inferred course from filename: {filename_course}")
+        
+        return student_info
+    
+    def clean_grades_pdf_value(self, value, field_type):
+        """Enhanced cleaning for grades PDF field values"""
+        if not value or len(value.strip()) == 0:
+            return None
+        
+        value = value.strip()
+        
+        # Filter out obvious non-data
+        noise_values = ['N/A', 'NA', 'NONE', 'TBA', 'TBD', '', 'EQUIVALENT', 'REMARKS', 'UNITS', 'GRADE']
+        if value.upper() in noise_values:
+            return None
+        
+        if field_type == 'subject_code':
+            # Clean subject codes - only keep alphanumeric and common patterns
+            cleaned = re.sub(r'[^A-Z0-9\-\s]', '', value.upper())
+            cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+            
+            # Must look like a subject code
+            if re.match(r'^[A-Z]{2,5}\s?\d{3}[A-Z]?$', cleaned):
+                return cleaned
+            return None
+        
+        elif field_type == 'subject_description':
+            # Clean subject descriptions
+            if len(value) > 2 and not value.upper() in ['EQUIVALENT', 'REMARKS', 'UNITS', 'GRADE']:
+                # Remove extra spaces and capitalize properly
+                cleaned = re.sub(r'\s+', ' ', value).strip().title()
+                return cleaned
+            return None
+        
+        elif field_type == 'units':
+            # Extract numeric values for units (typically 1-6)
+            numeric_match = re.search(r'^([1-6])$', value)
+            return numeric_match.group(1) if numeric_match else None
+        
+        elif field_type == 'equivalent':
+            # Clean grade values
+            if self.is_valid_grade_format(value):
+                return value
+            return None
+        
+        elif field_type == 'remarks':
+            # Clean remarks
+            cleaned = value.upper().strip()
+            
+            # Map common remarks
+            remarks_mapping = {
+                'P': 'PASSED',
+                'F': 'FAILED', 
+                'INC': 'INCOMPLETE',
+                'DRP': 'DROPPED',
+                'DROPPED': 'DROPPED',
+                'INCOMPLETE': 'INCOMPLETE',
+                'PASSED': 'PASSED',
+                'FAILED': 'FAILED'
+            }
+            
+            return remarks_mapping.get(cleaned, cleaned if len(cleaned) > 0 else 'PASSED')
+        
+        return value
+    
+    def process_student_grades_pdf(self, filename):
+        """Process Student Grades PDF with existence validation"""
+        try:
+            grades_info = self.extract_student_grades_pdf_info(filename)
+            
+            if not grades_info or not grades_info.get('grades'):
+                print("❌ Could not extract student grades data from PDF")
+                return False
+            
+            student_info = grades_info['student_info']
+            student_number = student_info.get('student_number', '')
+            student_name = student_info.get('student_name', '')
+            
+            # Check if student exists in ChromaDB
+            exists, existing_collection = self.check_student_exists_in_chromadb(student_number, student_name)
+            
+            if not exists:
+                print(f"❌ Student not found in ChromaDB: {student_number} - {student_name}")
+                print(f"💡 Please ensure the student data is loaded before adding grades.")
+                return False
+            
+            print(f"✅ Student found in collection: {existing_collection}")
+            
+            # Format grades data (reuse existing method)
+            formatted_text = self.format_student_grades_enhanced(grades_info)
+            
+            # Create metadata
+            metadata = {
+                'student_number': student_number,
+                'student_name': student_name,
+                'course': student_info.get('course', 'Unknown'),
+                'gwa': student_info.get('gwa', 'N/A'),
+                'total_subjects': len(grades_info['grades']),
+                'data_type': 'student_grades_pdf',  # Different from Excel
+                'department': self.detect_department_from_course(student_info.get('course', '')),
+                'existing_collection': existing_collection
+            }
+            
+            # Add grades to collection (same logic as Excel)
+            collection_name = f"{existing_collection}_grades"
+            
+            try:
+                collection = self.client.get_collection(
+                    name=collection_name,
+                    embedding_function=self.embedding_function
+                )
+            except:
+                collection = self.client.create_collection(
+                    name=collection_name,
+                    embedding_function=self.embedding_function
+                )
+            
+            self.store_with_smart_metadata(collection, [formatted_text], [metadata])
+            self.collections[collection_name] = collection
+            
+            collection_type = self.get_collection_type(existing_collection)
+            print(f"✅ Loaded student grades (PDF) into: {collection_name}")
+            print(f"   🎓 Student: {student_name} ({student_number})")
+            print(f"   📚 Subjects: {metadata['total_subjects']}, GWA: {metadata['gwa']}")
+            print(f"   🔗 Linked to: {collection_type}")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error processing student grades PDF: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
 
     # ======================== STUDENT DATA PROCESSING ========================
     
@@ -5396,7 +6018,7 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
         return metadata
     
     def is_non_teaching_faculty_resume_pdf(self, filename):
-        """Check if PDF is a Non-Teaching Faculty Resume file - ENHANCED detection"""
+        """Check if PDF is a Non-Teaching Faculty Resume file - ENHANCED detection with TEACHING EXCLUSION"""
         try:
             doc = fitz.open(filename)
             first_page = doc[0].get_text().lower()
@@ -5408,62 +6030,69 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
                 "qualifications", "background", "experience"
             ]
             
-            # ENHANCED Non-teaching position indicators
-            non_teaching_positions = [
-                "registrar", "accounting", "accountant", "guidance", "counselor", 
-                "library", "librarian", "health", "nurse", "maintenance", "custodial",
-                "security", "guard", "system admin", "it support", "administrative",
-                "secretary", "assistant", "clerk", "janitor", "cashier", "treasurer",
-                "facilities", "building maintenance", "custodial services",
-                "preventive maintenance", "hvac", "electrical", "plumbing",
-                "equipment maintenance", "technical support", "network admin"
+            # CRITICAL: Teaching exclusion indicators - SPECIFIC to actual teaching roles
+            teaching_exclusion_indicators = [
+                "mathematics department chair", "department chair", "math teacher", 
+                "professor", "instructor", "lecturer", "teacher", "teaching experience",
+                "taught algebra", "taught calculus", "taught mathematics", "classroom management",
+                "curriculum development", "lesson planning", "academic department",
+                "course instruction", "student assessment", "grading", "syllabus",
+                "pedagogy", "educational methodology", "teaching certification",
+                "faculty position", "academic position", "research", "publications"
             ]
             
-            # ENHANCED Administrative/support context indicators
+            # Non-teaching position indicators - EXPANDED for guidance
+            non_teaching_positions = [
+                "guidance counselor", "school counselor", "counselor", "guidance",
+                "registrar", "accounting", "accountant", "librarian", "nurse", 
+                "maintenance technician", "custodial", "security guard", 
+                "system administrator", "it support", "administrative assistant", 
+                "secretary", "clerk", "cashier", "facilities manager", 
+                "building maintenance", "janitor", "receptionist", "office manager", 
+                "data entry", "bookkeeper", "student services", "admissions"
+            ]
+            
+            # Administrative context indicators - MADE MORE SPECIFIC
             admin_context = [
-                "office", "department", "services", "support", "administration",
-                "staff", "employee", "personnel", "non-teaching", "administrative",
-                "maintenance", "facilities", "building", "campus", "operations",
-                "repairs", "upkeep", "supervision", "district", "school district"
+                "office administration", "clerical", "support staff", "non-teaching",
+                "facilities", "building operations", "campus services", "student services",
+                "administrative support", "office operations", "records management"
             ]
             
             # Professional certifications that indicate non-teaching roles
             non_teaching_certs = [
-                "epa", "osha", "cmt certified", "electrical safety", "hvac cert",
-                "building maintenance", "facilities management", "safety cert"
+                "office administration certification", "facilities management",
+                "custodial certification", "security license", "it certification",
+                "administrative professional", "customer service", "bookkeeping"
             ]
             
             has_resume_indicator = any(indicator in first_page for indicator in resume_indicators)
+            
+            # CRITICAL CHECK: If ANY teaching indicators are found, this is NOT non-teaching
+            has_teaching_exclusion = any(indicator in first_page for indicator in teaching_exclusion_indicators)
+            
             has_non_teaching_position = any(pos in first_page for pos in non_teaching_positions)
             has_admin_context = any(context in first_page for context in admin_context)
             has_non_teaching_certs = any(cert in first_page for cert in non_teaching_certs)
-            
-            # Should NOT have teaching indicators (academic focus)
-            teaching_indicators = [
-                "professor", "instructor", "lecturer", "teacher", "faculty adviser",
-                "teaching experience", "academic experience", "research", "publications",
-                "curriculum development", "classroom", "students", "courses taught"
-            ]
-            has_teaching_indicator = any(indicator in first_page for indicator in teaching_indicators)
             
             # Should NOT have student data
             student_indicators = ["student id", "year level", "course section", "guardian"]
             has_student_indicator = any(indicator in first_page for indicator in student_indicators)
             
-            # ENHANCED LOGIC: Strong indicators for non-teaching
+            # ENHANCED LOGIC: Strong exclusion for teaching content
             is_non_teaching_resume = (
                 has_resume_indicator and
                 (has_non_teaching_position or has_admin_context or has_non_teaching_certs) and
-                not has_teaching_indicator and
-                not has_student_indicator
+                not has_student_indicator and
+                not has_teaching_exclusion  # CRITICAL: Exclude if ANY teaching indicators found
             )
             
             print(f"📄 Non-Teaching Faculty Resume PDF detection for {filename}:")
             print(f"   Resume indicator: {has_resume_indicator}")
+            print(f"   Teaching exclusion found: {has_teaching_exclusion}")  # Show this for debugging
             print(f"   Non-teaching position: {has_non_teaching_position}")
             print(f"   Admin context: {has_admin_context}")
             print(f"   Non-teaching certs: {has_non_teaching_certs}")
-            print(f"   Teaching indicator: {has_teaching_indicator}")
             print(f"   Final result: {is_non_teaching_resume}")
             
             return is_non_teaching_resume
@@ -5748,15 +6377,23 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
         
         all_content = f"{position} {experience} {education} {certifications}"
         
-        # ENHANCED Non-teaching department detection with more keywords
-        if any(term in all_content for term in ['MAINTENANCE', 'CUSTODIAL', 'JANITOR', 'CLEANER', 'FACILITIES', 'BUILDING', 'HVAC', 'ELECTRICAL', 'PLUMBING', 'REPAIRS', 'PREVENTIVE MAINTENANCE']):
+        # ENHANCED Non-teaching department detection with BETTER PRIORITY ORDER
+        # CHECK MAINTENANCE FIRST (most specific)
+        if any(term in all_content for term in [
+            'MAINTENANCE', 'CUSTODIAL', 'JANITOR', 'CLEANER', 'FACILITIES', 'BUILDING', 
+            'HVAC', 'ELECTRICAL', 'PLUMBING', 'REPAIRS', 'PREVENTIVE MAINTENANCE',
+            'MAINTENANCE TECH', 'LEAD MAINTENANCE', 'BUILDING MAINTENANCE',
+            'EPA', 'OSHA', 'CMT CERTIFIED', 'ELECTRICAL SAFETY'
+        ]):
             return 'MAINTENANCE_CUSTODIAL'
+        
+        # THEN check other specific departments
+        elif any(term in all_content for term in ['GUIDANCE', 'COUNSELOR', 'COUNSELLING', 'STUDENT AFFAIRS', 'PSYCHOLOGY', 'MENTAL HEALTH', 'STUDENT SUPPORT']):
+            return 'GUIDANCE'
         elif any(term in all_content for term in ['REGISTRAR', 'REGISTRATION', 'RECORDS', 'ENROLLMENT']):
             return 'REGISTRAR'
         elif any(term in all_content for term in ['ACCOUNTING', 'ACCOUNTANT', 'FINANCE', 'CASHIER', 'TREASURER', 'BUDGET']):
             return 'ACCOUNTING'
-        elif any(term in all_content for term in ['GUIDANCE', 'COUNSELOR', 'COUNSELLING', 'STUDENT AFFAIRS']):
-            return 'GUIDANCE'
         elif any(term in all_content for term in ['LIBRARY', 'LIBRARIAN', 'INFORMATION SERVICES']):
             return 'LIBRARY'
         elif any(term in all_content for term in ['HEALTH', 'NURSE', 'MEDICAL', 'CLINIC', 'FIRST AID']):
@@ -5765,10 +6402,12 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
             return 'SECURITY'
         elif any(term in all_content for term in ['SYSTEM ADMIN', 'IT SUPPORT', 'NETWORK', 'COMPUTER TECHNICIAN', 'TECHNICAL', 'IT SERVICES']):
             return 'SYSTEM_ADMIN'
-        elif any(term in all_content for term in ['ADMIN', 'ADMINISTRATIVE', 'SECRETARY', 'ASSISTANT', 'CLERK', 'OFFICE']):
+        
+        # ADMIN_SUPPORT is now the final fallback (less specific terms)
+        elif any(term in all_content for term in ['OFFICE ADMINISTRATION', 'ADMINISTRATIVE', 'SECRETARY', 'ASSISTANT', 'CLERK', 'OFFICE', 'ADMIN']):
             return 'ADMIN_SUPPORT'
         
-        return 'MAINTENANCE_CUSTODIAL' 
+        return 'ADMIN_SUPPORT'  # Ultimate fallback
     
     def process_non_teaching_faculty_resume_pdf(self, filename):
         """Process Non-Teaching Faculty Resume PDF file"""
@@ -5778,15 +6417,25 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
                 print("❌ Could not extract non-teaching faculty resume data from PDF")
                 return False
             
-            # Enhanced department inference
+            # ENHANCED: Better department inference with DEBUG
             department = faculty_data.get('department', '')
+            position = faculty_data.get('position', '')
+            
+            print(f"🔍 DEBUG: Initial department from content: {department}")
+            print(f"🔍 DEBUG: Position: {position}")
             
             if not department or department in ['N/A', 'NA', '']:
-                if faculty_data.get('position'):
-                    department = self.infer_non_teaching_department_from_position(faculty_data['position'])
+                if position:
+                    department = self.infer_non_teaching_department_from_position(position)
+                    print(f"🔍 DEBUG: Department from position: {department}")
             
             if not department or department in ['N/A', 'NA', '']:
                 department = 'ADMIN_SUPPORT'  # Default for non-teaching
+                print(f"🔍 DEBUG: Using default department: {department}")
+            
+            # Update the faculty_data with final department
+            faculty_data['department'] = department
+            print(f"🔍 DEBUG: Final department: {department}")
             
             formatted_text = self.format_non_teaching_faculty_resume_enhanced(faculty_data)
             
@@ -5816,6 +6465,8 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
                 'data_type': 'non_teaching_faculty_resume_pdf',
                 'faculty_type': 'non_teaching',
             }
+            
+            print(f"🔍 DEBUG: Standardized department: {metadata['department']}")
             
             # Store with hierarchy
             collection_name = self.create_smart_collection_name('faculty', metadata)
@@ -6702,23 +7353,26 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
                 "qualifications", "academic background"
             ]
             
-            # Academic/Teaching context indicators - ENHANCED
+            # Academic/Teaching context indicators - SPECIFIC to teaching
             teaching_indicators = [
-                "education", "teaching experience", "academic experience",
                 "professor", "instructor", "faculty", "lecturer", "teacher",
-                "university", "college", "school", "academic", "research",
-                "dean", "department chair", "curriculum", "classroom"
+                "department chair", "academic department", "curriculum development",
+                "course instruction", "classroom", "teaching experience",
+                "research", "publications", "courses taught", "academic experience",
+                "university", "college", "educational", "pedagogy"
             ]
             
-            # NON-TEACHING exclusion indicators - NEW
-            non_teaching_indicators = [
+            # NON-TEACHING exclusion indicators - ENHANCED and SPECIFIC
+            non_teaching_exclusion_indicators = [
+                "guidance counselor", "school counselor", "counselor", "guidance office",
+                "student counseling", "mental health counseling", "therapy",
                 "maintenance", "custodial", "janitor", "cleaner", "facilities",
                 "security", "guard", "registrar", "accounting", "accountant",
                 "librarian", "library", "health services", "nurse", "clinic",
                 "administrative assistant", "secretary", "clerk", "cashier",
                 "it support", "system admin", "network", "technical support",
-                "building maintenance", "preventive maintenance", "hvac",
-                "electrical", "plumbing", "repairs", "equipment maintenance"
+                "office administration", "student support", "admissions",
+                "student services", "non-teaching"
             ]
             
             # Professional structure indicators
@@ -6730,7 +7384,7 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
             
             has_resume_indicator = any(indicator in first_page for indicator in resume_indicators)
             has_teaching_context = any(indicator in first_page for indicator in teaching_indicators)
-            has_non_teaching_context = any(indicator in first_page for indicator in non_teaching_indicators)
+            has_non_teaching_exclusion = any(indicator in first_page for indicator in non_teaching_exclusion_indicators)
             has_professional_structure = any(indicator in first_page for indicator in structure_indicators)
             
             # Should NOT have student data indicators
@@ -6741,11 +7395,11 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
             schedule_indicators = ["class schedule", "weekly schedule", "time table", "monday tuesday"]
             has_schedule_indicator = any(indicator in first_page for indicator in schedule_indicators)
             
-            # UPDATED LOGIC: Must have teaching context AND NOT have non-teaching context
+            # UPDATED LOGIC: Must have teaching context AND NOT have non-teaching exclusion
             is_faculty_resume = (
                 (has_resume_indicator or has_professional_structure) and
                 has_teaching_context and
-                not has_non_teaching_context and  # NEW: Exclude if non-teaching context found
+                not has_non_teaching_exclusion and  # CRITICAL: Exclude if non-teaching context found
                 not has_student_indicator and
                 not has_schedule_indicator
             )
@@ -6753,7 +7407,7 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
             print(f"📄 Teaching Faculty Resume PDF detection for {filename}:")
             print(f"   Resume indicator: {has_resume_indicator}")
             print(f"   Teaching context: {has_teaching_context}")
-            print(f"   Non-teaching context: {has_non_teaching_context}")  # NEW
+            print(f"   Non-teaching exclusion: {has_non_teaching_exclusion}")  # Show this for debugging
             print(f"   Professional structure: {has_professional_structure}")
             print(f"   Final result: {is_faculty_resume}")
             
@@ -8547,7 +9201,6 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
 
     # ======================== FILE PROCESSING CONTROLLER ========================
     
-    
     def process_teaching_faculty_schedule_excel(self, filename):
         """Process Teaching Faculty Schedule Excel with universal extraction"""
         try:
@@ -8994,17 +9647,20 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
                 elif self.is_cor_pdf(filename):
                     print("📄 Detected as COR PDF")
                     return self.process_with_duplicate_check(filename, 'cor_schedule')
-                # NEW: Check for Teaching Faculty Resume PDF
-                elif self.is_teaching_faculty_resume_pdf(filename):
-                    print("📄 Detected as Teaching Faculty Resume PDF")
-                    return self.process_with_duplicate_check(filename, 'teaching_faculty_resume_pdf')
-                # NEW: Check for Non-Teaching Faculty Resume PDF
+                # PRIORITIZE Non-Teaching Faculty Resume PDF BEFORE Teaching Faculty
                 elif self.is_non_teaching_faculty_resume_pdf(filename):
                     print("📄 Detected as Non-Teaching Faculty Resume PDF")
                     return self.process_with_duplicate_check(filename, 'non_teaching_faculty_resume_pdf')
+                # Check for Teaching Faculty Resume PDF
+                elif self.is_teaching_faculty_resume_pdf(filename):
+                    print("📄 Detected as Teaching Faculty Resume PDF")
+                    return self.process_with_duplicate_check(filename, 'teaching_faculty_resume_pdf')
                 elif self.is_faculty_schedule_pdf(filename):
                     print("📄 Detected as Faculty Schedule PDF")
                     return self.process_with_duplicate_check(filename, 'teaching_faculty_schedule')
+                elif self.is_student_grades_pdf(filename):
+                    print("📄 Detected as Student Grades PDF")
+                    return self.process_with_duplicate_check(filename, 'student_grades_pdf')
                 elif self.is_faculty_pdf(filename):
                     print("📄 Detected as Faculty PDF")
                     return self.process_with_duplicate_check(filename, 'teaching_faculty')
@@ -9634,30 +10290,34 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
             return False
         
     def infer_non_teaching_department_from_position(self, position):
-        """Infer non-teaching department from faculty position"""
+        """Infer non-teaching department from faculty position - ENHANCED for maintenance"""
         if not position:
             return None
         
         position_upper = position.upper()
         
-        # Non-teaching department mappings based on position
-        if any(word in position_upper for word in ['REGISTRAR', 'REGISTRATION', 'RECORDS']):
+        # Non-teaching department mappings based on position - MAINTENANCE FIRST
+        if any(word in position_upper for word in [
+            'MAINTENANCE', 'CUSTODIAL', 'JANITOR', 'CLEANER', 'FACILITIES',
+            'MAINTENANCE TECH', 'LEAD MAINTENANCE', 'BUILDING MAINTENANCE',
+            'MAINTENANCE ASSISTANT', 'FACILITIES MANAGER'
+        ]):
+            return 'MAINTENANCE_CUSTODIAL'
+        elif any(word in position_upper for word in ['GUIDANCE', 'COUNSELOR', 'COUNSELLING', 'STUDENT AFFAIRS', 'PSYCHOLOGY']):
+            return 'GUIDANCE'
+        elif any(word in position_upper for word in ['REGISTRAR', 'REGISTRATION', 'RECORDS']):
             return 'REGISTRAR'
         elif any(word in position_upper for word in ['ACCOUNTING', 'ACCOUNTANT', 'FINANCE', 'CASHIER', 'TREASURER']):
             return 'ACCOUNTING'
-        elif any(word in position_upper for word in ['GUIDANCE', 'COUNSELOR', 'COUNSELLING']):
-            return 'GUIDANCE'
-        elif any(word in position_upper for word in ['LIBRARY', 'LIBRARIAN']):  # ADD LIBRARIAN HERE
+        elif any(word in position_upper for word in ['LIBRARY', 'LIBRARIAN']):
             return 'LIBRARY'
         elif any(word in position_upper for word in ['HEALTH', 'NURSE', 'MEDICAL', 'CLINIC']):
             return 'HEALTH_SERVICES'
-        elif any(word in position_upper for word in ['MAINTENANCE', 'CUSTODIAL', 'JANITOR', 'CLEANER', 'FACILITIES']):
-            return 'MAINTENANCE_CUSTODIAL'
         elif any(word in position_upper for word in ['SECURITY', 'GUARD']):
             return 'SECURITY'
         elif any(word in position_upper for word in ['SYSTEM ADMIN', 'IT SUPPORT', 'NETWORK', 'COMPUTER TECHNICIAN', 'IT STAFF']):
             return 'SYSTEM_ADMIN'
-        elif any(word in position_upper for word in ['ADMIN', 'ADMINISTRATIVE', 'SECRETARY', 'ASSISTANT']):
+        elif any(word in position_upper for word in ['OFFICE ADMINISTRATION', 'ADMINISTRATIVE', 'SECRETARY', 'ASSISTANT', 'CLERK', 'OFFICE', 'ADMIN']):
             return 'ADMIN_SUPPORT'
         
         return None
@@ -11464,8 +12124,6 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
             '4': 'FOURTH YEAR'
         }
         
-
-        
     # ======================== SEARCH & QUERY ========================
     
     def search_all_collections(self, query, max_results=15):
@@ -11491,6 +12149,89 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
                 print(f"⚠️ Error searching {name}: {e}")
         
         return all_results
+
+    def smart_search(self):
+        """True AI-powered search interface"""
+        query = input("\n🧠 Enter your search query: ").strip()
+        if not query:
+            return
+        
+        try:
+            limit_input = input("🔢 Max results (default 15): ").strip()
+            max_results = int(limit_input) if limit_input else 15
+        except ValueError:
+            max_results = 15
+        
+        print(f"\n🔍 AI is analyzing your query...")
+        
+        # Use the new AI-powered search
+        results = self.smart_search_with_ai_reasoning(query, max_results)
+        
+        if results:
+            print(f"\n✅ Found {len(results)} highly relevant results:")
+            for i, result in enumerate(results, 1):
+                print(f"\n📄 Result {i} (Relevance: {result['relevance']}) - {result['source']}:")
+                print(f"📁 {result.get('hierarchy', 'N/A')}")
+                print(f"🎯 Match: {result['match_reason']}")
+                print("-" * 60)
+                print(result['content'])
+        else:
+            print("❌ No relevant results found. Try rephrasing your query.")
+
+    def exact_match_search(self): # Removed 'query' parameter as it's taken from input
+        """Perform exact text matching across all collections"""
+        query = input("\n📝 Enter exact text to find: ").strip()
+        if not query:
+            return
+                
+        print(f"\n🔍 Searching for exact matches: '{query}'")
+        matches = []
+        for name, collection in self.collections.items():
+            try:
+                # Get all documents from collection
+                all_docs = collection.get() # Fetches all documents, can be slow for large collections
+                for doc in all_docs["documents"]:
+                    # Perform a case-insensitive search for flexibility
+                    if query.lower() in doc.lower():
+                        metadata = all_docs["metadatas"][all_docs["documents"].index(doc)] # Get corresponding metadata
+                        collection_type = self.get_collection_type(name)
+                        
+                        # ENHANCED: Use the centralized hierarchy display method
+                        hierarchy = self.get_proper_hierarchy_display(name, metadata)
+
+                        matches.append({
+                            "source": collection_type, 
+                            "content": doc,
+                            "metadata": metadata,
+                            "hierarchy": hierarchy
+                        })
+            except Exception as e:
+                print(f"⚠️ Error in exact search for {name}: {e}")
+                
+        if matches:
+            print(f"\n✅ Found {len(matches)} exact matches:")
+            for i, match in enumerate(matches, 1):
+                print(f"\n📄 Match {i} (from {match['source']}):")
+                print(f"📁 {match.get('hierarchy', 'N/A')}")
+                print("-" * 60)
+                print(match['content'])
+        else:
+            print("❌ No exact matches found.")
+
+    def search_specific_collection(self, collection_name, query, max_results=5):
+        """Search in a specific collection"""
+        if collection_name not in self.collections:
+            print(f"❌ Collection '{collection_name}' not found")
+            return []
+        
+        try:
+            collection = self.collections[collection_name]
+            # Use the consistent embedding function when querying
+            results = collection.query(query_texts=[query], n_results=max_results)
+            return results["documents"][0] if results["documents"] and results["documents"][0] else []
+        except Exception as e:
+            print(f"❌ Error searching: {e}")
+            return []
 
     # ======================== COLLECTION MANAGEMENT ========================
     
@@ -11687,15 +12428,18 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
     # ======================== USER INTERFACE ========================
     
     def show_search_options(self):
-        """Displays the main menu options to the user."""
-        print("\n" + "="*50)
-        print(" MAIN MENU")
-        print("="*50)
-        print("1. 🤖 Engage AI School Analyst (Recommended)")
-        print("2. 📂 Load More Data")
-        print("3. 🗑️ Manage Collections")
-        print("4. ⚙️ System Options")
-        print("5. ❌ Exit")
+        """Display search options to user"""
+        print("\n🔍 SEARCH OPTIONS:")
+        print("1. 🔎 Smart Search (AI-powered similarity)")
+        print("2. 📝 Exact Match Search")
+        print("3. 📊 Browse by Collection")
+        print("4. 📂 Load More Data")
+        print("5. 📋 Show All Collections")
+        print("6. 🗑️  Manage Collections")
+        print("7. 🧹 Clean Existing Duplicates")  # NEW OPTION
+        print("8. 🔧 Debug Search")
+        print("9. 🔧 Simple Search Debug")
+        print("10. ❌ Exit")   # Update this
 
         if self.collections:
             print(f"\n📚 Loaded Collections:")
@@ -11859,7 +12603,6 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
                     return value
         
         return None
-    
     
     def debug_search(self, query):
         """Debug search to see what's happening"""

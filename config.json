@@ -1,6 +1,6 @@
 {
   "online": {
-    "debug_mode": false,
+    "debug_mode": true,
     "mistral_api_key": "fcbJyUY4pHwpCNOTB7Wq3IZaivGdzz01",
     "mistral_api_url": "https://api.mistral.ai/v1/chat/completions",
     "planner_model": "codestral-latest",
@@ -9,7 +9,7 @@
   "offline": {
     "debug_mode": true,
     "ollama_api_url": "http://localhost:11434/api/chat",
-    "planner_model": "mistral:instruct",
+    "planner_model": "phi3:latest",
     "synth_model": "mistral:instruct"
   }
 }

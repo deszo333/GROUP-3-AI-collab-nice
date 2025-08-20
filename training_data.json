@@ -16255,6 +16255,6024 @@
       "execution_time": 3.644944190979004,
       "timestamp": "2025-08-18T19:42:19.033597",
       "error_message": null
+    },
+    {
+      "query": "who is our librarian",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for information about the librarian. I need to find the record for the librarian to get their details. I will search the 'faculty_library_non_teaching' collection for the librarian's information.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "faculty_library_non_teaching",
+                "filters": {
+                  "position": "Librarian"
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "I have found the record for the librarian. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 4.467620849609375,
+      "timestamp": "2025-08-18T22:44:27.621603",
+      "error_message": null
+    },
+    {
+      "query": "what is his schedule",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for the schedule of the librarian, who we've identified as Trevor Q. Clark. Since librarians are non-teaching staff, their schedules are stored in a separate collection. I will search the 'faculty_library_non_teaching_schedule' collection for Trevor's schedule.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "faculty_library_non_teaching_schedule",
+                "query_text": "schedule",
+                "filters": {
+                  "staff_name": "Trevor Q. Clark"
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "I have found Trevor Clark's schedule. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 4.493860244750977,
+      "timestamp": "2025-08-18T22:44:44.246787",
+      "error_message": null
+    },
+    {
+      "query": "all your data avaialble",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking to list down all data available in the database. I need to retrieve all records from all collections.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "all data"
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "I have retrieved all records from all collections. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      },
+      "results_count": 68,
+      "execution_time": 9.150711297988892,
+      "timestamp": "2025-08-18T22:45:21.751678",
+      "error_message": null
+    },
+    {
+      "query": "who is the smartest person",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for the smartest person in the database. To determine this, I need to find the student with the highest GWA (General Weighted Average) in the 'grades' collections.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "grades",
+                "query_text": "highest GWA",
+                "filters": {}
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "I have retrieved the student with the highest GWA. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 4.090165138244629,
+      "timestamp": "2025-08-18T22:50:14.043380",
+      "error_message": null
+    },
+    {
+      "query": "who is our librarian?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for information about the librarian. I need to find the record for the librarian to get their details. I will search the 'faculty_library_non_teaching' collection for the librarian's information.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "faculty_library_non_teaching",
+                "filters": {
+                  "position": "Librarian"
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "I have found the record for the librarian. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 3.7292568683624268,
+      "timestamp": "2025-08-18T22:51:49.738383",
+      "error_message": null
+    },
+    {
+      "query": "What is the schedule for Lee Pace?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for the schedule of a person named Lee Pace. First, I must find the record for 'Lee Pace' to get their details like program, year, and section. I will search all collections to be thorough.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "Lee Pace",
+                "document_filter": {
+                  "$and": [
+                    {
+                      "$contains": "Lee"
+                    },
+                    {
+                      "$contains": "Pace"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "Now that I have the student's details from Step 1, I must use placeholders to find their specific schedule in the 'schedules' collections.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "schedules",
+                "query_text": "class schedule",
+                "filters": {
+                  "year_level": "$year_level_from_step_1",
+                  "section": "$section_from_step_1",
+                  "program": "$program_from_step_1"
+                }
+              }
+            }
+          },
+          {
+            "step": 3,
+            "thought": "I have found the student and their matching schedule. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 6.223597764968872,
+      "timestamp": "2025-08-18T22:51:59.719404",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "First, I need to find 'Lee Pace' in the students_ccs_bscs database.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection": "students_ccs_bscs",
+                "filters": {
+                  "department": "CCS",
+                  "program": "BSCS",
+                  "first_name": "Lee",
+                  "surname": "Pace"
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "Now that I have 'Lee Pace' details from step 1, I will find their schedule.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection": "schedules_ccs_bscs_year2_seca",
+                "filters": {
+                  "adviser": "$student_id_from_step_1"
+                }
+              }
+            }
+          },
+          {
+            "step": 3,
+            "thought": "The plan is complete.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 436.9372363090515,
+      "timestamp": "2025-08-19T00:07:24.164995",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for the schedule of a person named Lee Pace. First, I must find the record for 'Lee Pace' to get their details like program, year, and section. I will search all collections to be thorough.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "Lee Pace",
+                "document_filter": {
+                  "$and": [
+                    {
+                      "$contains": "Lee"
+                    },
+                    {
+                      "$contains": "Pace"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "Now that I have the student's details from Step 1, I must use placeholders to find their specific schedule in the 'schedules' collections.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "schedules",
+                "query_text": "class schedule",
+                "filters": {
+                  "year_level": "$year_level_from_step_1",
+                  "section": "$section_from_step_1",
+                  "program": "$program_from_step_1"
+                }
+              }
+            }
+          },
+          {
+            "step": 3,
+            "thought": "I have found the student and their matching schedule. I have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 8.16812252998352,
+      "timestamp": "2025-08-19T00:19:17.934983",
+      "error_message": null
+    },
+    {
+      "query": "who are the 1st year students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "",
+                "year_level": 1
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 30,
+      "execution_time": 34.04602074623108,
+      "timestamp": "2025-08-19T17:33:40.467716",
+      "error_message": null
+    },
+    {
+      "query": "who are the 1st year students complete",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "BSCS",
+                "year_level": 1
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 30,
+      "execution_time": 2.934591770172119,
+      "timestamp": "2025-08-19T17:34:00.579026",
+      "error_message": null
+    },
+    {
+      "query": "list down 1st year students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "",
+                "year_level": 1
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 30,
+      "execution_time": 3.7269272804260254,
+      "timestamp": "2025-08-19T17:45:27.064899",
+      "error_message": null
+    },
+    {
+      "query": "who are the 2nd year students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "BSCS",
+                "year_level": 2
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 30,
+      "execution_time": 3.895244598388672,
+      "timestamp": "2025-08-19T17:45:39.761676",
+      "error_message": null
+    },
+    {
+      "query": "who is trevor clark",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "trevor clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 66,
+      "execution_time": 3.290922164916992,
+      "timestamp": "2025-08-19T17:53:18.677774",
+      "error_message": null
+    },
+    {
+      "query": "who is our librarian",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "find_people_by_role",
+              "parameters": {
+                "role": "librarian"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 8.176026344299316,
+      "timestamp": "2025-08-19T17:55:54.220294",
+      "error_message": null
+    },
+    {
+      "query": "What is the schedule for Lee Pace?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Lee Pace"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 6.424327373504639,
+      "timestamp": "2025-08-19T17:56:19.790522",
+      "error_message": null
+    },
+    {
+      "query": "hello can you provide me a random 1st year student",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "",
+                "year_level": 1
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 30,
+      "execution_time": 2.953540563583374,
+      "timestamp": "2025-08-19T17:57:12.377073",
+      "error_message": null
+    },
+    {
+      "query": "who is lee pce",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "lee pce"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 68,
+      "execution_time": 35.22621440887451,
+      "timestamp": "2025-08-19T17:57:58.626795",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Lee Pace"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.0515880584716797,
+      "timestamp": "2025-08-19T17:58:40.208109",
+      "error_message": null
+    },
+    {
+      "query": "can you give me more information about that schedule",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Lee Pace"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.0425772666931152,
+      "timestamp": "2025-08-19T18:00:45.500358",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of alex torres",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Alex Torres"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.879969358444214,
+      "timestamp": "2025-08-19T18:03:22.379883",
+      "error_message": null
+    },
+    {
+      "query": "who is alex torres",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "who is alex torres"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 68,
+      "execution_time": 4.940519094467163,
+      "timestamp": "2025-08-19T18:03:33.031139",
+      "error_message": null
+    },
+    {
+      "query": "who is alex",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "who is alex"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 68,
+      "execution_time": 4.6333091259002686,
+      "timestamp": "2025-08-19T18:05:32.201321",
+      "error_message": null
+    },
+    {
+      "query": "who is kari",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "who is kari"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 68,
+      "execution_time": 3.0759408473968506,
+      "timestamp": "2025-08-19T18:06:34.215863",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of alex",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "alex"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 2.0732574462890625,
+      "timestamp": "2025-08-19T18:09:00.783720",
+      "error_message": null
+    },
+    {
+      "query": "who is alex",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "who is alex"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 68,
+      "execution_time": 5.019005298614502,
+      "timestamp": "2025-08-19T18:09:13.957885",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of alex",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "alex"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 2.8292970657348633,
+      "timestamp": "2025-08-19T18:09:35.974766",
+      "error_message": null
+    },
+    {
+      "query": "& C:/Users/oswed/AppData/Local/Programs/Python/Python313/python.exe \"c:/Users/oswed/Desktop/Copy of Green and Blue Travel Trifold Brochure (A4 (Landscape))/FINAL/g1_data_process.py\"",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "Alex"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 68,
+      "execution_time": 3.9642717838287354,
+      "timestamp": "2025-08-19T18:11:48.715877",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of alex",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "alex"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 1.944373607635498,
+      "timestamp": "2025-08-19T18:12:26.240207",
+      "error_message": null
+    },
+    {
+      "query": "alex reyes",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Alex Reyes"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 4.264048099517822,
+      "timestamp": "2025-08-19T18:12:36.604307",
+      "error_message": null
+    },
+    {
+      "query": "hello",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "hello"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 68,
+      "execution_time": 2.28159761428833,
+      "timestamp": "2025-08-19T18:12:45.534585",
+      "error_message": null
+    },
+    {
+      "query": "do you have a context",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "do you have a context"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 68,
+      "execution_time": 13.361008882522583,
+      "timestamp": "2025-08-19T18:13:06.898376",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of alex torres",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Alex Torres"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 1.9751641750335693,
+      "timestamp": "2025-08-19T18:13:18.356819",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of torres alex",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "torres alex"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 2.9201369285583496,
+      "timestamp": "2025-08-19T18:16:19.860553",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of trevor",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "trevor"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 2.687814235687256,
+      "timestamp": "2025-08-19T18:16:43.653881",
+      "error_message": null
+    },
+    {
+      "query": "& C:/Users/oswed/AppData/Local/Programs/Python/Python313/python.exe \"c:/Users/oswed/Desktop/Copy of Green and Blue Travel Trifold Brochure (A4 (Landscape))/FINAL/g1_data_process.py\"",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor Clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 1.6354124546051025,
+      "timestamp": "2025-08-19T18:24:19.335319",
+      "error_message": null
+    },
+    {
+      "query": "2nd year students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "",
+                "year_level": 2
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 30,
+      "execution_time": 14.30885624885559,
+      "timestamp": "2025-08-19T18:25:10.617849",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of gray mary",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Gray, Mary"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.09867787361145,
+      "timestamp": "2025-08-19T18:25:23.817337",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of Mary Gray",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Mary Gray"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.0452611446380615,
+      "timestamp": "2025-08-19T18:25:38.396349",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule for bscs 2nd year students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Gray, Mary"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 17.266531229019165,
+      "timestamp": "2025-08-19T18:26:06.419935",
+      "error_message": null
+    },
+    {
+      "query": "schedules you have",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "you"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.2202155590057373,
+      "timestamp": "2025-08-19T18:26:27.389010",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of mary gray",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Mary Gray"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 16.195337533950806,
+      "timestamp": "2025-08-19T18:27:00.868808",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of mary gray",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Mary Gray"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 1.7970516681671143,
+      "timestamp": "2025-08-19T18:27:36.448630",
+      "error_message": null
+    },
+    {
+      "query": "who is mary gray",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "mary gray"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 66,
+      "execution_time": 7.988441228866577,
+      "timestamp": "2025-08-19T18:27:50.608716",
+      "error_message": null
+    },
+    {
+      "query": "who is mary gray",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "mary gray"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 36,
+      "execution_time": 3.7503199577331543,
+      "timestamp": "2025-08-19T18:29:16.308488",
+      "error_message": null
+    },
+    {
+      "query": "3123",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "3123"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 2.2790589332580566,
+      "timestamp": "2025-08-19T18:29:47.276856",
+      "error_message": null
+    },
+    {
+      "query": "who is mary gray",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "mary gray"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 31,
+      "execution_time": 6.133808612823486,
+      "timestamp": "2025-08-19T18:30:22.557683",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of mary gray",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Mary Gray"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 16.329067945480347,
+      "timestamp": "2025-08-19T18:30:44.952757",
+      "error_message": null
+    },
+    {
+      "query": "schedules of bscs year 2 section a",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "bscs year 2 section a"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 6.245533227920532,
+      "timestamp": "2025-08-19T18:31:04.029924",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of mary gray",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Mary Gray"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 3.6944713592529297,
+      "timestamp": "2025-08-19T18:34:44.852532",
+      "error_message": null
+    },
+    {
+      "query": "can you give me a random 2nd year student",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "",
+                "year_level": 2
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 30,
+      "execution_time": 2.285874366760254,
+      "timestamp": "2025-08-19T18:45:16.018297",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of john walker",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "John Walker"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 20.610058307647705,
+      "timestamp": "2025-08-19T18:45:42.214547",
+      "error_message": null
+    },
+    {
+      "query": "bscs 2nd year section a schedule",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "BSCS 2nd Year Section A"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 3.763444423675537,
+      "timestamp": "2025-08-19T18:46:06.248911",
+      "error_message": null
+    },
+    {
+      "query": "schedule",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "schedule"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 1.441662073135376,
+      "timestamp": "2025-08-19T18:46:13.198948",
+      "error_message": null
+    },
+    {
+      "query": "give me all the 2nd year students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "",
+                "year_level": 2
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 30,
+      "execution_time": 5.639236688613892,
+      "timestamp": "2025-08-19T18:54:18.276170",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of mary gray",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Mary Gray"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 6.700650691986084,
+      "timestamp": "2025-08-19T18:54:30.929650",
+      "error_message": null
+    },
+    {
+      "query": "give me all the schedules you have",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "give me all the schedules you have"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 31,
+      "execution_time": 3.4669225215911865,
+      "timestamp": "2025-08-19T18:57:14.666893",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of student Mary Gray?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Mary Gray"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 3.631366014480591,
+      "timestamp": "2025-08-19T19:09:09.532078",
+      "error_message": null
+    },
+    {
+      "query": "who is the adviser for the bscs year 2 students?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_adviser_info",
+              "parameters": {
+                "program": "BSCS",
+                "year_level": 2
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 1.7891526222229004,
+      "timestamp": "2025-08-19T19:09:22.966501",
+      "error_message": null
+    },
+    {
+      "query": "which faculty member is the busiest?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "find_faculty_by_class_count",
+              "parameters": {
+                "find_most": true
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 1.5735242366790771,
+      "timestamp": "2025-08-19T19:09:34.015895",
+      "error_message": null
+    },
+    {
+      "query": "I think Lee Pace is advised by Dr. Lewis, is that correct?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "verify_student_adviser",
+              "parameters": {
+                "student_name": "Lee Pace",
+                "adviser_name": "Dr. Lewis"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 3,
+      "execution_time": 4.060380935668945,
+      "timestamp": "2025-08-19T19:09:56.871260",
+      "error_message": null
+    },
+    {
+      "query": "I think Lee Pace is advised by Dr. Lewis, is that correct?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "verify_student_adviser",
+              "parameters": {
+                "student_name": "Lee Pace",
+                "adviser_name": "Dr. Lewis"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 3,
+      "execution_time": 1.6591439247131348,
+      "timestamp": "2025-08-19T19:10:55.910211",
+      "error_message": null
+    },
+    {
+      "query": "who is lewis",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "lewis"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 32,
+      "execution_time": 2.2499330043792725,
+      "timestamp": "2025-08-19T19:11:07.725274",
+      "error_message": null
+    },
+    {
+      "query": "is dr deborah the same person as lewis",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "dr deborah lewis"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 32,
+      "execution_time": 1.9627580642700195,
+      "timestamp": "2025-08-19T19:11:30.581624",
+      "error_message": null
+    },
+    {
+      "query": "is lee pace's adviser dr lewis?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "verify_student_adviser",
+              "parameters": {
+                "student_name": "Lee Pace",
+                "adviser_name": "Dr. Lewis"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 3,
+      "execution_time": 78.39356780052185,
+      "timestamp": "2025-08-19T19:16:28.967219",
+      "error_message": null
+    },
+    {
+      "query": "is lee pace's adviser deborah lewis?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "verify_student_adviser",
+              "parameters": {
+                "student_name": "Lee Pace",
+                "adviser_name": "Deborah Lewis"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 3,
+      "execution_time": 1.6505579948425293,
+      "timestamp": "2025-08-19T19:17:01.729744",
+      "error_message": null
+    },
+    {
+      "query": "who is deborah lewis",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "deborah lewis"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 32,
+      "execution_time": 2.630831003189087,
+      "timestamp": "2025-08-19T19:18:58.886350",
+      "error_message": null
+    },
+    {
+      "query": "exot",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "exot"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 32,
+      "execution_time": 1.8265783786773682,
+      "timestamp": "2025-08-19T19:31:37.286301",
+      "error_message": null
+    },
+    {
+      "query": "who is trevor",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "trevor"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 33,
+      "execution_time": 2.4312376976013184,
+      "timestamp": "2025-08-19T19:33:50.236626",
+      "error_message": null
+    },
+    {
+      "query": "is lee pace's adviser deborah lewis?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "verify_student_adviser",
+              "parameters": {
+                "student_name": "Lee Pace",
+                "adviser_name": "Deborah Lewis"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 3,
+      "execution_time": 2.3087944984436035,
+      "timestamp": "2025-08-19T20:12:13.065773",
+      "error_message": null
+    },
+    {
+      "query": "& C:/Users/oswed/AppData/Local/Programs/Python/Python313/python.exe \"c:/Users/oswed/Desktop/Copy of Green and Blue Travel Trifold Brochure (A4 (Landscape))/FINAL/g1_data_process.py\"",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "who is our librarian"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 33,
+      "execution_time": 32.328317642211914,
+      "timestamp": "2025-08-19T20:16:02.271288",
+      "error_message": null
+    },
+    {
+      "query": "who is our librarian",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "find_people_by_role",
+              "parameters": {
+                "role": "librarian"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 1.7572240829467773,
+      "timestamp": "2025-08-19T20:16:51.097249",
+      "error_message": null
+    },
+    {
+      "query": "who has the highest grades",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "who has the highest grades"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 33,
+      "execution_time": 8.351469278335571,
+      "timestamp": "2025-08-19T20:17:23.530648",
+      "error_message": null
+    },
+    {
+      "query": "exot",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "exot"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 33,
+      "execution_time": 2.354762554168701,
+      "timestamp": "2025-08-19T20:17:30.054315",
+      "error_message": null
+    },
+    {
+      "query": "what classes does deborah teach",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Deborah"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 3.125664710998535,
+      "timestamp": "2025-08-19T20:18:07.896704",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of our librarian",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "find_people_by_role",
+              "parameters": {
+                "role": "librarian"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 2.029073476791382,
+      "timestamp": "2025-08-19T20:18:48.768444",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of trevor",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor Q. Clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.2087883949279785,
+      "timestamp": "2025-08-19T20:18:57.507622",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of our librarian",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "librarian"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 6.018585443496704,
+      "timestamp": "2025-08-19T20:19:16.254104",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of trevor",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.2612955570220947,
+      "timestamp": "2025-08-19T20:19:37.375743",
+      "error_message": null
+    },
+    {
+      "query": "schedule",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "schedule"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 1.6275503635406494,
+      "timestamp": "2025-08-19T20:19:45.965885",
+      "error_message": null
+    },
+    {
+      "query": "non teaching faculty schedule",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "non teaching faculty"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 19.58004856109619,
+      "timestamp": "2025-08-19T20:20:12.499826",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Lee Pace"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 4.242336273193359,
+      "timestamp": "2025-08-19T20:20:26.100719",
+      "error_message": null
+    },
+    {
+      "query": "who is lee pc",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "lee pc"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 65,
+      "execution_time": 5.598623752593994,
+      "timestamp": "2025-08-19T20:20:41.624740",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Lee Pace"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.5316169261932373,
+      "timestamp": "2025-08-19T20:20:52.430065",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "lee pace"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.6614482402801514,
+      "timestamp": "2025-08-19T20:21:14.103872",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Lee Pace"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 3.366894245147705,
+      "timestamp": "2025-08-19T20:24:42.017033",
+      "error_message": null
+    },
+    {
+      "query": "any more info about him?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "lee pace"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.8027100563049316,
+      "timestamp": "2025-08-19T20:24:50.597003",
+      "error_message": null
+    },
+    {
+      "query": "who is our librarian",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "find_people_by_role",
+              "parameters": {
+                "role": "librarian"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 2.061758518218994,
+      "timestamp": "2025-08-19T20:25:02.040122",
+      "error_message": null
+    },
+    {
+      "query": "10.Who advises the 2nd year BSCS students?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_adviser_info",
+              "parameters": {
+                "program": "BSCS",
+                "year_level": 2
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 4,
+      "execution_time": 2.3582711219787598,
+      "timestamp": "2025-08-19T20:25:23.112624",
+      "error_message": null
+    },
+    {
+      "query": "11.Who are the students named on the schedule advised by Dr. Deborah?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "BSCS",
+                "year_level": 2
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 30,
+      "execution_time": 4.092607736587524,
+      "timestamp": "2025-08-19T20:25:41.238988",
+      "error_message": null
+    },
+    {
+      "query": "12.who has the most advisory classes?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "find_faculty_by_class_count",
+              "parameters": {
+                "find_most": true
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 4,
+      "execution_time": 2.2213988304138184,
+      "timestamp": "2025-08-19T20:25:50.359560",
+      "error_message": null
+    },
+    {
+      "query": "14.Compare the roles and employment status of Deborah Lewis and Kari Roberts",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "roles and employment status of Deborah Lewis and Kari Roberts"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 66,
+      "execution_time": 5.313526391983032,
+      "timestamp": "2025-08-19T20:26:24.059780",
+      "error_message": null
+    },
+    {
+      "query": "15.Is the adviser for the second-year students a permanent employee?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_adviser_info",
+              "parameters": {
+                "program": "BSCS",
+                "year_level": 2
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 5,
+      "execution_time": 2.496283531188965,
+      "timestamp": "2025-08-19T20:26:42.394126",
+      "error_message": null
+    },
+    {
+      "query": "what is the contact number of our board member",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "find_people_by_role",
+              "parameters": {
+                "role": "board member"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 1.488252878189087,
+      "timestamp": "2025-08-19T20:31:01.965521",
+      "error_message": null
+    },
+    {
+      "query": "what is his employment status",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "his employment status"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 66,
+      "execution_time": 4.427969455718994,
+      "timestamp": "2025-08-19T20:33:23.308247",
+      "error_message": null
+    },
+    {
+      "query": "& C:/Users/oswed/AppData/Local/Programs/Python/Python313/python.exe \"c:/Users/oswed/Desktop/Copy of Green and Blue Travel Trifold Brochure (A4 (Landscape))/FINAL/g1_data_process.py\"",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "C:/Users/oswed/AppData/Local/Programs/Python/Python313/python.exe \"c:/Users/oswed/Desktop/Copy of Green and Blue Travel Trifold Brochure (A4 (Landscape))/FINAL/g1_data_process.py\""
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 66,
+      "execution_time": 5.2296435832977295,
+      "timestamp": "2025-08-19T20:35:38.375154",
+      "error_message": null
+    },
+    {
+      "query": "16.Tell me about the people who work here permanently",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "people who work here permanently"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 36,
+      "execution_time": 2.6323533058166504,
+      "timestamp": "2025-08-19T20:36:59.312011",
+      "error_message": null
+    },
+    {
+      "query": "16.Tell me about the people who work here permanently",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "answer_question_about_person",
+              "parameters": {
+                "person_name": "Kari Miranda Roberts",
+                "question": "What is her employment status?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 37,
+      "execution_time": 3.6479482650756836,
+      "timestamp": "2025-08-19T20:37:20.367499",
+      "error_message": null
+    },
+    {
+      "query": "who work here contractually",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "who work here contractually"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 36,
+      "execution_time": 1.9218335151672363,
+      "timestamp": "2025-08-19T20:37:45.047732",
+      "error_message": null
+    },
+    {
+      "query": "17.My friend Lee Pace is in Dr. Lewis's advisory class. How many total units is he taking this semester?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "answer_question_about_person",
+              "parameters": {
+                "person_name": "Lee Pace",
+                "question": "How many total units is he taking this semester?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 37,
+      "execution_time": 3.4375224113464355,
+      "timestamp": "2025-08-19T20:38:27.364778",
+      "error_message": null
+    },
+    {
+      "query": "18.I'm a second-year student and I need some help with a research paper. Who should I talk to and are they a professor?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "get_adviser_info",
+              "parameters": {
+                "program": "CCS",
+                "year_level": 2
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 1.8742356300354004,
+      "timestamp": "2025-08-19T20:38:46.061157",
+      "error_message": null
+    },
+    {
+      "query": "who is deborah",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "who is deborah"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 36,
+      "execution_time": 3.592874526977539,
+      "timestamp": "2025-08-19T20:39:04.328118",
+      "error_message": null
+    },
+    {
+      "query": "who is our librarian",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "who is our librarian"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 66,
+      "execution_time": 33.11458206176758,
+      "timestamp": "2025-08-19T20:49:11.310814",
+      "error_message": null
+    },
+    {
+      "query": "all your data available",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "all your data available"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 66,
+      "execution_time": 7.605746746063232,
+      "timestamp": "2025-08-19T20:51:18.147073",
+      "error_message": null
+    },
+    {
+      "query": "7.what is the schedule of our librarian?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor Q. Clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.3596909046173096,
+      "timestamp": "2025-08-19T20:52:23.931923",
+      "error_message": null
+    },
+    {
+      "query": "i need help finding some books",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "books"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 66,
+      "execution_time": 5.923746824264526,
+      "timestamp": "2025-08-19T20:52:50.120389",
+      "error_message": null
+    },
+    {
+      "query": "when can i find him",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor Q. Clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.4596407413482666,
+      "timestamp": "2025-08-19T20:54:23.087724",
+      "error_message": null
+    },
+    {
+      "query": "schedules",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor Q. Clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 4.8004913330078125,
+      "timestamp": "2025-08-19T20:54:33.716022",
+      "error_message": null
+    },
+    {
+      "query": "all your data",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "all your data"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 66,
+      "execution_time": 25.209482669830322,
+      "timestamp": "2025-08-19T20:55:10.046470",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of trevor clark",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor Clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 7.661162614822388,
+      "timestamp": "2025-08-19T21:08:21.454420",
+      "error_message": null
+    },
+    {
+      "query": "1.who is Trevor Clark?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "who is Trevor Clark?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 66,
+      "execution_time": 3.7782132625579834,
+      "timestamp": "2025-08-19T21:09:02.346557",
+      "error_message": null
+    },
+    {
+      "query": "2.What is the student ID for Jake Lopez?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "answer_question_about_person",
+              "parameters": {
+                "person_name": "Jake Lopez",
+                "question": "What is his student ID?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 67,
+      "execution_time": 36.92815089225769,
+      "timestamp": "2025-08-19T21:09:51.504653",
+      "error_message": null
+    },
+    {
+      "query": "3.Find the student record for Chloe Cruz with student ID PDM-2025-0010.",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "answer_question_about_person",
+              "parameters": {
+                "person_name": "Chloe Cruz",
+                "question": "What is her student ID?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 67,
+      "execution_time": 4.814322233200073,
+      "timestamp": "2025-08-19T21:10:10.366801",
+      "error_message": null
+    },
+    {
+      "query": "4.What department does Deborah K. Lewis belong to",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "answer_question_about_person",
+              "parameters": {
+                "person_name": "Deborah K. Lewis",
+                "question": "What department does she belong to?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 67,
+      "execution_time": 5.0367982387542725,
+      "timestamp": "2025-08-19T21:10:23.373522",
+      "error_message": null
+    },
+    {
+      "query": "5.List all students in Year 2, Section A.",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "BSCS",
+                "year_level": 2
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 30,
+      "execution_time": 13.010594367980957,
+      "timestamp": "2025-08-19T21:10:44.122540",
+      "error_message": null
+    },
+    {
+      "query": "7.what is the schedule of our librarian",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor Clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 4.044022560119629,
+      "timestamp": "2025-08-19T21:10:56.195959",
+      "error_message": null
+    },
+    {
+      "query": "8.what classes does Deborah teach?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Deborah K. Lewis"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.4772753715515137,
+      "timestamp": "2025-08-19T21:11:06.341234",
+      "error_message": null
+    },
+    {
+      "query": "8.what classes does Deborah advises",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Deborah K. Lewis"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.3165111541748047,
+      "timestamp": "2025-08-19T21:11:34.819571",
+      "error_message": null
+    },
+    {
+      "query": "who is the adviser for 2nd year bscs section a",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_adviser_info",
+              "parameters": {
+                "program": "BSCS",
+                "year_level": 2
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 5,
+      "execution_time": 4.705831289291382,
+      "timestamp": "2025-08-19T21:11:53.079078",
+      "error_message": null
+    },
+    {
+      "query": "9.What is the schedule for Lee Pace?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Lee Pace"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 3.9344308376312256,
+      "timestamp": "2025-08-19T21:12:37.309260",
+      "error_message": null
+    },
+    {
+      "query": "10.Who advises the 2nd year BSCS students?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_adviser_info",
+              "parameters": {
+                "program": "BSCS",
+                "year_level": 2
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 5,
+      "execution_time": 2.7230024337768555,
+      "timestamp": "2025-08-19T21:12:46.323684",
+      "error_message": null
+    },
+    {
+      "query": "11.Who are the students named on the schedule advised by Dr. Deborah?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "BSCS",
+                "year_level": 2
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 30,
+      "execution_time": 12.464649677276611,
+      "timestamp": "2025-08-19T21:13:07.491066",
+      "error_message": null
+    },
+    {
+      "query": "im an aspiring college student, which course here fits me",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "aspiring college student"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 66,
+      "execution_time": 5.744737863540649,
+      "timestamp": "2025-08-19T21:13:27.943686",
+      "error_message": null
+    },
+    {
+      "query": "14.Compare the roles and employment status of Deborah Lewis and Kari Roberts",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "answer_question_about_person",
+              "parameters": {
+                "person_name": "Deborah Lewis",
+                "question": "What is her role and employment status?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 67,
+      "execution_time": 5.451777219772339,
+      "timestamp": "2025-08-19T21:13:49.268795",
+      "error_message": null
+    },
+    {
+      "query": "14.Compare the roles and employment status of Deborah Lewis and Kari Roberts",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "compare_schedules",
+              "parameters": {
+                "person_a_name": "Deborah Lewis",
+                "person_b_name": "Kari Roberts"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 4,
+      "execution_time": 3.5898754596710205,
+      "timestamp": "2025-08-19T21:14:18.085447",
+      "error_message": null
+    },
+    {
+      "query": "16.Tell me about the people who work here permanently.",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "people who work here permanently"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 66,
+      "execution_time": 4.327752351760864,
+      "timestamp": "2025-08-19T21:14:31.783123",
+      "error_message": null
+    },
+    {
+      "query": "17.My friend Lee Pace is in Dr. Lewis's advisory class. How many total units is he taking this semester?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Lee Pace"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.535095691680908,
+      "timestamp": "2025-08-19T21:14:36.718013",
+      "error_message": null
+    },
+    {
+      "query": "18.I'm a second-year student and I need some help with a research paper. Who should I talk to and are they a professor?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_adviser_info",
+              "parameters": {
+                "program": "BSCS",
+                "year_level": 2
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 5,
+      "execution_time": 3.7148261070251465,
+      "timestamp": "2025-08-19T21:14:46.858205",
+      "error_message": null
+    },
+    {
+      "query": "19.I need the contact info for the permanent faculty member who advises the second-year computer science students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "answer_question_about_person",
+              "parameters": {
+                "person_name": "Deborah Lewis",
+                "question": "What is her contact number?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 67,
+      "execution_time": 5.142314672470093,
+      "timestamp": "2025-08-19T21:15:00.059730",
+      "error_message": null
+    },
+    {
+      "query": "20.is there a schedule for a professor named 'John Wick'?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "schedule for professor John Wick"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 66,
+      "execution_time": 3.1390514373779297,
+      "timestamp": "2025-08-19T21:15:11.010857",
+      "error_message": null
+    },
+    {
+      "query": "18.I'm a second-year student and I need some help with a research paper. Who should I talk to and are they a professor?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_adviser_info",
+              "parameters": {
+                "program": "student",
+                "year_level": 2
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 37,
+      "execution_time": 3.6386280059814453,
+      "timestamp": "2025-08-19T21:16:08.911825",
+      "error_message": null
+    },
+    {
+      "query": "19.I need the contact info for the permanent faculty member who advises the second-year computer science students.",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "answer_question_about_person",
+              "parameters": {
+                "person_name": "Dr. Deborah Lewis",
+                "question": "What is her contact info?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 37,
+      "execution_time": 7.074752569198608,
+      "timestamp": "2025-08-19T21:17:15.303944",
+      "error_message": null
+    },
+    {
+      "query": "our classroom have electricity issues help",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "electricity issues in classrooms"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 37,
+      "execution_time": 6.580907821655273,
+      "timestamp": "2025-08-19T21:17:44.283772",
+      "error_message": null
+    },
+    {
+      "query": "i need some help finding some books who can help me",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "books that can help me"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 67,
+      "execution_time": 3.5709664821624756,
+      "timestamp": "2025-08-19T21:25:10.455443",
+      "error_message": null
+    },
+    {
+      "query": "i need help finding some books",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "books"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 67,
+      "execution_time": 2.4929583072662354,
+      "timestamp": "2025-08-19T21:25:20.182169",
+      "error_message": null
+    },
+    {
+      "query": "i need some help with electricity issues",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "electricity issues"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 67,
+      "execution_time": 2.92476224899292,
+      "timestamp": "2025-08-19T21:25:31.936892",
+      "error_message": null
+    },
+    {
+      "query": "1.who is Trevor Clark?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "who is Trevor Clark?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 66,
+      "execution_time": 3.820962905883789,
+      "timestamp": "2025-08-19T21:33:41.447934",
+      "error_message": null
+    },
+    {
+      "query": "what is his schedule?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor Clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 5.8382408618927,
+      "timestamp": "2025-08-19T21:33:58.449742",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of trevor",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor Clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 7.393446683883667,
+      "timestamp": "2025-08-19T21:34:20.844497",
+      "error_message": null
+    },
+    {
+      "query": "who is our librarian",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "Librarian",
+                "employment_status": ""
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 1.8105435371398926,
+      "timestamp": "2025-08-19T21:37:19.620900",
+      "error_message": null
+    },
+    {
+      "query": "what is his schedule",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor Q. Clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.197134256362915,
+      "timestamp": "2025-08-19T21:37:26.005710",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of trevor",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor Q. Clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 32.47357988357544,
+      "timestamp": "2025-08-19T21:38:09.947930",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of trevor",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 3.177722930908203,
+      "timestamp": "2025-08-19T21:39:18.338986",
+      "error_message": null
+    },
+    {
+      "query": "who is our librarian and what is his schedule",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "Librarian",
+                "employment_status": ""
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 1.9013731479644775,
+      "timestamp": "2025-08-19T21:39:36.990734",
+      "error_message": null
+    },
+    {
+      "query": "what is his schedule",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor Q. Clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.2333648204803467,
+      "timestamp": "2025-08-19T21:39:55.426915",
+      "error_message": null
+    },
+    {
+      "query": "who is our librarian",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "Librarian",
+                "employment_status": ""
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 5.477132558822632,
+      "timestamp": "2025-08-19T21:40:08.878406",
+      "error_message": null
+    },
+    {
+      "query": "what is his schedule",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor Q. Clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.3046114444732666,
+      "timestamp": "2025-08-19T21:40:15.490284",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedyle of trevor",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor Q. Clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.6176042556762695,
+      "timestamp": "2025-08-19T21:40:24.963271",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of trevor clark",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor Clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 3.9686336517333984,
+      "timestamp": "2025-08-19T21:40:40.714135",
+      "error_message": null
+    },
+    {
+      "query": "i need help finding some books",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "Librarian",
+                "employment_status": ""
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 16.591599702835083,
+      "timestamp": "2025-08-19T21:43:36.727791",
+      "error_message": null
+    },
+    {
+      "query": "who is our librarian",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "Librarian",
+                "employment_status": ""
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 2.2339727878570557,
+      "timestamp": "2025-08-19T21:48:56.489808",
+      "error_message": null
+    },
+    {
+      "query": "what is his schedule",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor Q. Clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.2016749382019043,
+      "timestamp": "2025-08-19T21:49:04.272693",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of trevor clark",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor Clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 1.7462677955627441,
+      "timestamp": "2025-08-19T21:49:19.945969",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Lee Pace"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.0832271575927734,
+      "timestamp": "2025-08-19T21:49:39.722843",
+      "error_message": null
+    },
+    {
+      "query": "2nd year students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "BS Computer Science",
+                "year_level": 2
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 30,
+      "execution_time": 27.303024530410767,
+      "timestamp": "2025-08-19T21:50:24.894539",
+      "error_message": null
+    },
+    {
+      "query": "who is lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "who is lee pace"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 67,
+      "execution_time": 6.834820032119751,
+      "timestamp": "2025-08-19T21:50:37.410096",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Lee Pace"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.6466214656829834,
+      "timestamp": "2025-08-19T21:50:44.261017",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "lee pace"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 4.426584005355835,
+      "timestamp": "2025-08-19T21:53:04.033190",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of lee apce",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "lee apce"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 67,
+      "execution_time": 7.444415807723999,
+      "timestamp": "2025-08-19T21:53:28.682828",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "lee pace"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 3.0648016929626465,
+      "timestamp": "2025-08-19T21:54:00.277899",
+      "error_message": null
+    },
+    {
+      "query": "who is lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "who is lee pace"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 31,
+      "execution_time": 6.943275213241577,
+      "timestamp": "2025-08-19T21:56:25.740786",
+      "error_message": null
+    },
+    {
+      "query": "who is lee",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "who is lee"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 31,
+      "execution_time": 4.783786773681641,
+      "timestamp": "2025-08-19T21:56:39.141504",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Lee Pace"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 4.8842079639434814,
+      "timestamp": "2025-08-19T21:56:55.073723",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "lee pace"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 3.843907117843628,
+      "timestamp": "2025-08-19T21:57:07.268174",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Lee Pace"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.932548761367798,
+      "timestamp": "2025-08-19T21:57:42.287452",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of trevor",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 32,
+      "execution_time": 1.962096929550171,
+      "timestamp": "2025-08-19T21:57:49.351266",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of trevor",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "trevor"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.4305787086486816,
+      "timestamp": "2025-08-19T21:58:14.283504",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of clark",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 1.9783217906951904,
+      "timestamp": "2025-08-19T21:58:42.247772",
+      "error_message": null
+    },
+    {
+      "query": "trevor clark",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor Clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 1.8952865600585938,
+      "timestamp": "2025-08-19T21:58:59.300797",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of trevor",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "trevor"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.555842399597168,
+      "timestamp": "2025-08-19T21:59:50.288942",
+      "error_message": null
+    },
+    {
+      "query": "schedules",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "compare_schedules",
+              "parameters": {
+                "person_a_name": "Trevor Clark",
+                "person_b_name": "Trevor Clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 4,
+      "execution_time": 2.6527602672576904,
+      "timestamp": "2025-08-19T22:00:29.905938",
+      "error_message": null
+    },
+    {
+      "query": "all your data",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "all your data"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 33,
+      "execution_time": 8.576254844665527,
+      "timestamp": "2025-08-19T22:00:40.735646",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of our librarian",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor Q. Clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.020491123199463,
+      "timestamp": "2025-08-19T22:01:08.225690",
+      "error_message": null
+    },
+    {
+      "query": "all the data about teaching faculty",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "Teaching Faculty",
+                "employment_status": ""
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 35,
+      "execution_time": 3.203598976135254,
+      "timestamp": "2025-08-19T22:03:26.784849",
+      "error_message": null
+    },
+    {
+      "query": "schedule of trevor",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 1.8619341850280762,
+      "timestamp": "2025-08-19T22:05:56.537436",
+      "error_message": null
+    },
+    {
+      "query": "& C:/Users/oswed/AppData/Local/Programs/Python/Python313/python.exe \"c:/Users/oswed/Desktop/Copy of Green and Blue Travel Trifold Brochure (A4 (Landscape))/FINAL/g1_data_process.py\"",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "C:/Users/oswed/AppData/Local/Programs/Python/Python313/python.exe \"c:/Users/oswed/Desktop/Copy of Green and Blue Travel Trifold Brochure (A4 (Landscape))/FINAL/g1_data_process.py\""
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 34,
+      "execution_time": 4.644132852554321,
+      "timestamp": "2025-08-19T22:15:49.161254",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of trevor",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "trevor"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 5.605198860168457,
+      "timestamp": "2025-08-19T22:16:30.720661",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "lee pace"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 3.1369268894195557,
+      "timestamp": "2025-08-19T22:16:46.566387",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of trevor",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "trevor"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.6495048999786377,
+      "timestamp": "2025-08-19T22:17:31.498283",
+      "error_message": null
+    },
+    {
+      "query": "all the data you have as well as their metadata",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "all the data you have as well as their metadata"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 34,
+      "execution_time": 21.094184398651123,
+      "timestamp": "2025-08-19T22:18:23.125957",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "lee pace"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 20.625102519989014,
+      "timestamp": "2025-08-19T22:24:06.562987",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of trevor",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.55755615234375,
+      "timestamp": "2025-08-19T22:24:14.149667",
+      "error_message": null
+    },
+    {
+      "query": "who is our librarian",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "Librarian",
+                "employment_status": ""
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 2.1271612644195557,
+      "timestamp": "2025-08-19T22:24:28.399148",
+      "error_message": null
+    },
+    {
+      "query": "what is his schedule",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor Q. Clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 1.772749662399292,
+      "timestamp": "2025-08-19T22:24:34.491920",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of trevor",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "trevor"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 19.11152482032776,
+      "timestamp": "2025-08-19T22:25:33.151679",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "lee pace"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 3.3818860054016113,
+      "timestamp": "2025-08-19T22:28:31.577699",
+      "error_message": null
+    },
+    {
+      "query": "who is our librarian",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "Librarian",
+                "employment_status": ""
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 1.8645110130310059,
+      "timestamp": "2025-08-19T22:28:39.295718",
+      "error_message": null
+    },
+    {
+      "query": "what is his schedule",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor Q. Clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 6.270768642425537,
+      "timestamp": "2025-08-19T22:28:48.758185",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "lee pace"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.8572397232055664,
+      "timestamp": "2025-08-19T22:32:29.854921",
+      "error_message": null
+    },
+    {
+      "query": "who is our librarian",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "Librarian",
+                "employment_status": ""
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 2.2290382385253906,
+      "timestamp": "2025-08-19T22:32:37.667339",
+      "error_message": null
+    },
+    {
+      "query": "what is his schedule",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor Q. Clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 1.8521511554718018,
+      "timestamp": "2025-08-19T22:32:44.170543",
+      "error_message": null
+    },
+    {
+      "query": "who is lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "who is lee pace"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 34,
+      "execution_time": 5.215271234512329,
+      "timestamp": "2025-08-19T22:46:26.407206",
+      "error_message": null
+    },
+    {
+      "query": "what is his schedule",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Lee Pace"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 3.8559939861297607,
+      "timestamp": "2025-08-19T22:46:34.274285",
+      "error_message": null
+    },
+    {
+      "query": "who is our librarian",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "Librarian",
+                "employment_status": ""
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 32.60718011856079,
+      "timestamp": "2025-08-19T22:47:10.626057",
+      "error_message": null
+    },
+    {
+      "query": "what is his schedule",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor Q. Clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.567225217819214,
+      "timestamp": "2025-08-19T22:47:29.521987",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of trevor",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "trevor"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.4879536628723145,
+      "timestamp": "2025-08-19T22:48:50.954587",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of trevor",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "trevor"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.2434988021850586,
+      "timestamp": "2025-08-19T22:51:42.581375",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of trevor",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "trevor"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.8197057247161865,
+      "timestamp": "2025-08-19T22:52:02.861412",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of trevor",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "trevor"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.14876651763916,
+      "timestamp": "2025-08-19T22:52:27.870509",
+      "error_message": null
+    },
+    {
+      "query": "all your data",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "all your data"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 33,
+      "execution_time": 6.987370014190674,
+      "timestamp": "2025-08-19T22:52:47.652125",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of clark",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 12.09113597869873,
+      "timestamp": "2025-08-19T22:53:42.868630",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of trevor",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "trevor"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 63.795186281204224,
+      "timestamp": "2025-08-19T22:55:06.507614",
+      "error_message": null
+    },
+    {
+      "query": "who is our librarian",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "Librarian",
+                "employment_status": ""
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 2.826552629470825,
+      "timestamp": "2025-08-19T23:00:19.042473",
+      "error_message": null
+    },
+    {
+      "query": "what is his schedule",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor Q. Clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 16.324134349822998,
+      "timestamp": "2025-08-19T23:00:39.012277",
+      "error_message": null
+    },
+    {
+      "query": "who is our librarian",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "Librarian",
+                "employment_status": ""
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 1.9327392578125,
+      "timestamp": "2025-08-19T23:04:09.859962",
+      "error_message": null
+    },
+    {
+      "query": "what is his schedule",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Trevor Q. Clark"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 9.559194803237915,
+      "timestamp": "2025-08-19T23:04:21.830046",
+      "error_message": null
+    },
+    {
+      "query": "1.who is Trevor Clark?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "who is Trevor Clark?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 34,
+      "execution_time": 35.04189872741699,
+      "timestamp": "2025-08-19T23:08:59.944027",
+      "error_message": null
+    },
+    {
+      "query": "traom",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "traom"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 34,
+      "execution_time": 29.198062658309937,
+      "timestamp": "2025-08-19T23:09:41.771968",
+      "error_message": null
+    },
+    {
+      "query": "4.What department does Deborah K. Lewis belong to",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "answer_question_about_person",
+              "parameters": {
+                "person_name": "Deborah K. Lewis",
+                "question": "What department does she belong to?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 35,
+      "execution_time": 3.859574317932129,
+      "timestamp": "2025-08-19T23:10:14.145402",
+      "error_message": null
+    },
+    {
+      "query": "exot",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "exot"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 34,
+      "execution_time": 33.83268713951111,
+      "timestamp": "2025-08-19T23:11:43.269575",
+      "error_message": null
+    },
+    {
+      "query": "list down bsit students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 33,
+      "execution_time": 2.6375458240509033,
+      "timestamp": "2025-08-20T14:28:01.587277",
+      "error_message": null
+    },
+    {
+      "query": "what is their grades",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "answer_question_about_person",
+              "parameters": {
+                "person_name": "students_ccs_bsit_year1_seca",
+                "question": "What are their grades?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 99,
+      "execution_time": 4.754566431045532,
+      "timestamp": "2025-08-20T14:28:09.792321",
+      "error_message": null
+    },
+    {
+      "query": "who is the smartest student",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "who is the smartest student"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 98,
+      "execution_time": 2.5730128288269043,
+      "timestamp": "2025-08-20T14:28:45.434670",
+      "error_message": null
+    },
+    {
+      "query": "list down bsit students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": 1
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 30,
+      "execution_time": 3.8915517330169678,
+      "timestamp": "2025-08-20T14:31:23.664123",
+      "error_message": null
+    },
+    {
+      "query": "what is their grades",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": 1
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 99,
+      "execution_time": 25.382209300994873,
+      "timestamp": "2025-08-20T14:31:52.955131",
+      "error_message": null
+    },
+    {
+      "query": "list down bsit students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 33,
+      "execution_time": 4.523943901062012,
+      "timestamp": "2025-08-20T14:35:09.692298",
+      "error_message": null
+    },
+    {
+      "query": "what is their grades",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "answer_question_about_person",
+              "parameters": {
+                "person_name": "bsit students",
+                "question": "what is their grades?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 99,
+      "execution_time": 9.237293720245361,
+      "timestamp": "2025-08-20T14:35:24.576262",
+      "error_message": null
+    },
+    {
+      "query": "who has the highest grades among them",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "highest grades among BSIT students"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 98,
+      "execution_time": 3.16469144821167,
+      "timestamp": "2025-08-20T14:35:35.610845",
+      "error_message": null
+    },
+    {
+      "query": "what is the grade of bsit students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "grade of bsit students"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 98,
+      "execution_time": 4.01523494720459,
+      "timestamp": "2025-08-20T14:35:54.160398",
+      "error_message": null
+    },
+    {
+      "query": "1",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "1"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 67,
+      "execution_time": 3.544746160507202,
+      "timestamp": "2025-08-20T14:40:26.440096",
+      "error_message": null
+    },
+    {
+      "query": "list down bsit students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": 1
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 30,
+      "execution_time": 3.6074671745300293,
+      "timestamp": "2025-08-20T14:41:01.598004",
+      "error_message": null
+    },
+    {
+      "query": "who is the smartest among them",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "who is the smartest among the BSIT students"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 96,
+      "execution_time": 8.636622905731201,
+      "timestamp": "2025-08-20T14:41:17.061220",
+      "error_message": null
+    },
+    {
+      "query": "what is their grades?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": 1
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 33,
+      "execution_time": 5.690644264221191,
+      "timestamp": "2025-08-20T14:41:30.029114",
+      "error_message": null
+    },
+    {
+      "query": "what is the grades of bsit 1st year students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": 1
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 33,
+      "execution_time": 2.8687193393707275,
+      "timestamp": "2025-08-20T14:42:18.267007",
+      "error_message": null
+    },
+    {
+      "query": "who is the smartest among them",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": 1
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 33,
+      "execution_time": 2.466750144958496,
+      "timestamp": "2025-08-20T14:42:33.332852",
+      "error_message": null
+    },
+    {
+      "query": "who is the smartest student of bsit students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "who is the smartest student of bsit students"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 97,
+      "execution_time": 4.304590225219727,
+      "timestamp": "2025-08-20T14:43:23.467740",
+      "error_message": null
+    },
+    {
+      "query": "who is the smartest bsit student",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 36,
+      "execution_time": 3.114206075668335,
+      "timestamp": "2025-08-20T15:04:33.388932",
+      "error_message": null
+    },
+    {
+      "query": "who is the smartest bsit 1st year student",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": 1
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 33,
+      "execution_time": 4.036479711532593,
+      "timestamp": "2025-08-20T15:04:44.543642",
+      "error_message": null
+    },
+    {
+      "query": "who is the smartest student",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "student_name": null,
+                "program": null,
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 98,
+      "execution_time": 3.1053760051727295,
+      "timestamp": "2025-08-20T15:04:53.310115",
+      "error_message": null
+    },
+    {
+      "query": "what is the grades of daniel gomez",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "student_name": "Daniel Gomez"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 3.12318754196167,
+      "timestamp": "2025-08-20T15:05:05.114194",
+      "error_message": null
+    },
+    {
+      "query": "so who is the smartest student",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "student_name": null,
+                "program": null,
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 98,
+      "execution_time": 4.170921325683594,
+      "timestamp": "2025-08-20T15:05:18.523321",
+      "error_message": null
+    },
+    {
+      "query": "who is the smartest student",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "student_name": null,
+                "program": null,
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 99,
+      "execution_time": 4.353505611419678,
+      "timestamp": "2025-08-20T15:06:07.599193",
+      "error_message": null
+    },
+    {
+      "query": "who has the highest gwa",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "student_name": null,
+                "program": null,
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 99,
+      "execution_time": 3.078549385070801,
+      "timestamp": "2025-08-20T15:06:25.055483",
+      "error_message": null
+    },
+    {
+      "query": "who has the highest gwa in 1st year students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "year_level": 1
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 64,
+      "execution_time": 11.310692071914673,
+      "timestamp": "2025-08-20T15:10:23.606091",
+      "error_message": null
+    },
+    {
+      "query": "GRADES",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "student_name": null,
+                "program": null,
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 99,
+      "execution_time": 9.096760272979736,
+      "timestamp": "2025-08-20T15:13:59.086637",
+      "error_message": null
+    },
+    {
+      "query": "who is the smartest student",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "student_name": null,
+                "program": null,
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 69,
+      "execution_time": 5.223962068557739,
+      "timestamp": "2025-08-20T15:14:58.843843",
+      "error_message": null
+    },
+    {
+      "query": "grades",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {}
+            }
+          }
+        ]
+      },
+      "results_count": 67,
+      "execution_time": 18.278055906295776,
+      "timestamp": "2025-08-20T15:20:32.338107",
+      "error_message": null
+    },
+    {
+      "query": "all grades you have",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "student_name": null,
+                "program": null,
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 97,
+      "execution_time": 3.3357279300689697,
+      "timestamp": "2025-08-20T15:22:49.499598",
+      "error_message": null
+    },
+    {
+      "query": "all the grades you have",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "student_name": null,
+                "program": null,
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 97,
+      "execution_time": 8.498718738555908,
+      "timestamp": "2025-08-20T15:30:31.566949",
+      "error_message": null
+    },
+    {
+      "query": "all the grades you have",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "student_name": null,
+                "program": null,
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 6.603893518447876,
+      "timestamp": "2025-08-20T15:32:14.335408",
+      "error_message": null
+    },
+    {
+      "query": "bsit students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": 1
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 30,
+      "execution_time": 41.26989531517029,
+      "timestamp": "2025-08-20T15:33:10.002829",
+      "error_message": null
+    },
+    {
+      "query": "all their grades",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": 1
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 97,
+      "execution_time": 5.963457822799683,
+      "timestamp": "2025-08-20T15:33:34.460659",
+      "error_message": null
+    },
+    {
+      "query": "all the grades you have",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "student_name": null,
+                "program": null,
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 3,
+      "execution_time": 6.238158702850342,
+      "timestamp": "2025-08-20T15:34:13.974005",
+      "error_message": null
+    },
+    {
+      "query": "bsit students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": 1
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 30,
+      "execution_time": 15.285027980804443,
+      "timestamp": "2025-08-20T15:34:37.978677",
+      "error_message": null
+    },
+    {
+      "query": "smartest student of bsit",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 68,
+      "execution_time": 9.650090217590332,
+      "timestamp": "2025-08-20T15:35:57.830033",
+      "error_message": null
+    },
+    {
+      "query": "all grades you have",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {}
+            }
+          }
+        ]
+      },
+      "results_count": 3,
+      "execution_time": 3.524674892425537,
+      "timestamp": "2025-08-20T15:40:06.177649",
+      "error_message": null
+    },
+    {
+      "query": "grades of bsit students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": 1
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 68,
+      "execution_time": 5.225041151046753,
+      "timestamp": "2025-08-20T15:40:26.803241",
+      "error_message": null
+    },
+    {
+      "query": "who is the smartest student bro",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "student_name": null,
+                "program": null,
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 3,
+      "execution_time": 16.630829095840454,
+      "timestamp": "2025-08-20T15:41:56.841396",
+      "error_message": null
+    },
+    {
+      "query": "schedule of bsit student",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "bsit student"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.27005672454834,
+      "timestamp": "2025-08-20T15:42:34.490984",
+      "error_message": null
+    },
+    {
+      "query": "schedules of bsit student",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "bsit student"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 3.7624189853668213,
+      "timestamp": "2025-08-20T15:43:55.619553",
+      "error_message": null
+    },
+    {
+      "query": "which students have that",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "BS Information Technology",
+                "year_level": 1
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 30,
+      "execution_time": 27.864365577697754,
+      "timestamp": "2025-08-20T15:44:42.539088",
+      "error_message": null
+    },
+    {
+      "query": "& C:/Users/oswed/AppData/Local/Programs/Python/Python313/python.exe \"c:/Users/oswed/Desktop/Copy of Green and Blue Travel Trifold Brochure (A4 (Landscape))/FINAL/g1_data_process.py\"",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "C:/Users/oswed/AppData/Local/Programs/Python/Python313/python.exe \"c:/Users/oswed/Desktop/Copy of Green and Blue Travel Trifold Brochure (A4 (Landscape))/FINAL/g1_data_process.py\""
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 98,
+      "execution_time": 14.363557577133179,
+      "timestamp": "2025-08-20T15:50:35.319027",
+      "error_message": null
+    },
+    {
+      "query": "schedule of bsit students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "program": "BSIT"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 3.7142086029052734,
+      "timestamp": "2025-08-20T15:52:06.915414",
+      "error_message": null
+    },
+    {
+      "query": "schedules of bsit students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "program": "BSIT"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 4.101286172866821,
+      "timestamp": "2025-08-20T15:53:22.482840",
+      "error_message": null
+    },
+    {
+      "query": "list down random student of bsit 1st and 2nd year",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": 1
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 30,
+      "execution_time": 3.7951815128326416,
+      "timestamp": "2025-08-20T15:55:07.062150",
+      "error_message": null
+    },
+    {
+      "query": "list down random student of bsit 2nd year",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": 2
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 30,
+      "execution_time": 5.29931902885437,
+      "timestamp": "2025-08-20T15:55:23.231099",
+      "error_message": null
+    },
+    {
+      "query": "is there a conflict with schedule of luz villanueva and ana bautista",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "compare_schedules",
+              "parameters": {
+                "person_a_name": "Luz Villanueva",
+                "person_b_name": "Ana Bautista"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 4,
+      "execution_time": 3.0041587352752686,
+      "timestamp": "2025-08-20T15:55:42.040919",
+      "error_message": null
+    },
+    {
+      "query": "is there a conflict with schedule of luz villanueva and ana bautista",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "compare_schedules",
+              "parameters": {
+                "person_a_name": "luz villanueva",
+                "person_b_name": "ana bautista"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 4,
+      "execution_time": 3.723069667816162,
+      "timestamp": "2025-08-20T15:56:39.172003",
+      "error_message": null
+    },
+    {
+      "query": "is there a conflict with schedule of luz villanueva and ana bautista",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "compare_schedules",
+              "parameters": {
+                "person_a_name": "Luz Villanueva",
+                "person_b_name": "Ana Bautista"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 4,
+      "execution_time": 5.243709564208984,
+      "timestamp": "2025-08-20T15:57:02.940765",
+      "error_message": null
+    },
+    {
+      "query": "who is luz villanueva",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "who is luz villanueva"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 100,
+      "execution_time": 4.449817657470703,
+      "timestamp": "2025-08-20T15:57:18.190266",
+      "error_message": null
+    },
+    {
+      "query": "who is ana bautista",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "answer_question_about_person",
+              "parameters": {
+                "person_name": "Ana Bautista",
+                "question": "who is ana bautista"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 101,
+      "execution_time": 6.200245141983032,
+      "timestamp": "2025-08-20T15:57:28.225168",
+      "error_message": null
+    },
+    {
+      "query": "1st year it students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": 1
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 30,
+      "execution_time": 4.7883076667785645,
+      "timestamp": "2025-08-20T15:57:45.013625",
+      "error_message": null
+    },
+    {
+      "query": "grades of bsit students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 100,
+      "execution_time": 6.024226188659668,
+      "timestamp": "2025-08-20T16:28:53.953895",
+      "error_message": null
+    },
+    {
+      "query": "all your grades",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "student_name": null,
+                "program": null,
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 3,
+      "execution_time": 46.134114265441895,
+      "timestamp": "2025-08-20T16:33:55.565212",
+      "error_message": null
+    },
+    {
+      "query": "& C:/Users/oswed/AppData/Local/Programs/Python/Python313/python.exe \"c:/Users/oswed/Desktop/Copy of Green and Blue Travel Trifold Brochure (A4 (Landscape))/FINAL/g1_data_process.py\"",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "student_name": null,
+                "program": null,
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 3,
+      "execution_time": 2.5811026096343994,
+      "timestamp": "2025-08-20T16:36:59.642551",
+      "error_message": null
+    },
+    {
+      "query": "list bsit grades",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 62,
+      "execution_time": 17.500861644744873,
+      "timestamp": "2025-08-20T16:57:20.585028",
+      "error_message": null
+    },
+    {
+      "query": "smartest student of bsit",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 34,
+      "execution_time": 2.3760883808135986,
+      "timestamp": "2025-08-20T16:59:29.358697",
+      "error_message": null
+    },
+    {
+      "query": "smartest student of bsit",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 64,
+      "execution_time": 2.583883285522461,
+      "timestamp": "2025-08-20T17:01:13.830697",
+      "error_message": null
+    },
+    {
+      "query": "smartest student of bscs",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": "bscs",
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 32,
+      "execution_time": 37.457746505737305,
+      "timestamp": "2025-08-20T17:01:56.521715",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of daniel gomez",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Daniel Gomez"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 6.77192497253418,
+      "timestamp": "2025-08-20T17:02:56.483952",
+      "error_message": null
+    },
+    {
+      "query": "bsit grades",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": "BSIT"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 64,
+      "execution_time": 3.817070722579956,
+      "timestamp": "2025-08-20T17:10:01.293442",
+      "error_message": null
+    },
+    {
+      "query": "who is the smartest student",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": 1
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 32,
+      "execution_time": 2.860877513885498,
+      "timestamp": "2025-08-20T17:10:09.602779",
+      "error_message": null
+    },
+    {
+      "query": "who is the smartest student all course",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "student_name": null,
+                "program": null,
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 3,
+      "execution_time": 2.10499906539917,
+      "timestamp": "2025-08-20T17:10:19.734337",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of danielg omez",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Daniel Gomez"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 4.4948344230651855,
+      "timestamp": "2025-08-20T17:10:39.219042",
+      "error_message": null
+    },
+    {
+      "query": "all students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": null,
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 130,
+      "execution_time": 18.709340572357178,
+      "timestamp": "2025-08-20T17:12:27.009763",
+      "error_message": null
+    },
+    {
+      "query": "bscs grades",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": "BSCS"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 62,
+      "execution_time": 5.5346128940582275,
+      "timestamp": "2025-08-20T17:18:10.146962",
+      "error_message": null
     }
   ],
   "failed_queries": [
@@ -20113,47 +26131,698 @@
       "execution_time": 3.5792434215545654,
       "timestamp": "2025-08-18T19:42:09.279257",
       "error_message": null
+    },
+    {
+      "query": "list students",
+      "plan": null,
+      "results_count": 0,
+      "execution_time": 25.179022312164307,
+      "timestamp": "2025-08-18T22:34:22.046489",
+      "error_message": "Could not generate a valid JSON plan."
+    },
+    {
+      "query": "what is the schedule of lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "First, I need to find the student 'Lee Pace' to get their details.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "students_ccs_bscs_year1_seca",
+                "filters": {
+                  "full_name": "Lee Pace"
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "Now, I will use the student's details from step 1 to find their schedule.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "collection_filter": "schedules_ccs_newcourse_year2_seca",
+                "filters": {
+                  "program": "$program_from_step_1",
+                  "year_level": "$year_level_from_step_1",
+                  "section": "$section_from_step_1"
+                }
+              }
+            }
+          },
+          {
+            "step": 3,
+            "thought": "The plan is complete.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 3.695688009262085,
+      "timestamp": "2025-08-18T23:59:46.635482",
+      "error_message": "cannot access local variable 'step_result' where it is not associated with a value"
+    },
+    {
+      "query": "schedule of lee pace",
+      "plan": {
+        "plan": [
+          "Step 1",
+          "Search for Lee Pace's schedule online.",
+          "Step 2",
+          "Visit reliable sources such as his official website, IMDB, or social media accounts.",
+          "Step 3",
+          "Look for upcoming events, shows, movies, or interviews that Lee Pace is scheduled to appear in.",
+          "Step 4",
+          "Compile the information gathered from each source into a unified schedule."
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 167.9048969745636,
+      "timestamp": "2025-08-19T00:17:26.105350",
+      "error_message": "Step 1 is not a valid object (expected a dictionary)."
+    },
+    {
+      "query": "what is the schedule of lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": "Research Lee Pace's official website or social media pages."
+          },
+          {
+            "step": "Find a reliable news source that covers entertainment and celebrity schedules."
+          },
+          {
+            "step": "Search for any recent interviews, events, or public appearances of Lee Pace on the chosen reliable news source."
+          },
+          {
+            "step": "Cross-check the information found from multiple sources to ensure accuracy."
+          },
+          {
+            "step": "Compile and present the schedule of Lee Pace in a clear and concise format."
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 211.50362467765808,
+      "timestamp": "2025-08-19T00:22:56.206254",
+      "error_message": "Step 1 is missing or has an invalid 'tool_call' section."
+    },
+    {
+      "query": "who is lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for information about a person named 'Lee Pace'. I will search all collections to find the record for 'Lee Pace'.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "Lee Pace",
+                "document_filter": {
+                  "$and": [
+                    {
+                      "$contains": "Lee"
+                    },
+                    {
+                      "$contains": "Pace"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "I have found the record for 'Lee Pace'. I now have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 33.40859055519104,
+      "timestamp": "2025-08-19T00:43:02.121237",
+      "error_message": null
+    },
+    {
+      "query": "who is lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step_1": "Search online biographical information about Lee Pace",
+            "step_2": "Gather data from reputable sources such as news articles, official profiles, and interviews with or about him.",
+            "step_3": "Organize the collected data to highlight significant points in his life."
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 175.90501832962036,
+      "timestamp": "2025-08-19T00:46:45.481873",
+      "error_message": "Step 1 is missing or has an invalid 'tool_call' section."
+    },
+    {
+      "query": "who is lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "The user is asking for information about a person named 'Lee Pace'. I will search all collections to find this person's details.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "Lee Pace",
+                "document_filter": {
+                  "$and": [
+                    {
+                      "$contains": "Lee"
+                    },
+                    {
+                      "$contains": "Pace"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "step": 2,
+            "thought": "I have found the information about 'Lee Pace'. I now have all the information needed to answer the user's question.",
+            "tool_call": {
+              "tool_name": "finish_plan"
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 3.6229639053344727,
+      "timestamp": "2025-08-19T00:49:45.510611",
+      "error_message": null
+    },
+    {
+      "query": "who is our librarian?",
+      "plan": {
+        "plan": [
+          {
+            "tool_name": "find_people_by_role",
+            "parameters": {
+              "role": "librarian"
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 5.521377086639404,
+      "timestamp": "2025-08-19T17:10:54.273019",
+      "error_message": "Step 1 is missing or has an invalid 'tool_call' section."
+    },
+    {
+      "query": "list students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "",
+                "year_level": 0
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 3.733891725540161,
+      "timestamp": "2025-08-19T17:27:53.181204",
+      "error_message": "AI selected an unknown or unavailable tool: 'list_students'"
+    },
+    {
+      "query": "list students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "",
+                "year_level": 0
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 1.5547850131988525,
+      "timestamp": "2025-08-19T17:28:26.317264",
+      "error_message": "AI selected an unknown or unavailable tool: 'list_students'"
+    },
+    {
+      "query": "who is our librarian?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "find_people_by_role",
+              "parameters": {
+                "role": "librarian"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 1.5583171844482422,
+      "timestamp": "2025-08-19T17:46:51.398245",
+      "error_message": "AI selected an unknown or unavailable tool: 'find_people_by_role'"
+    },
+    {
+      "query": "who is our librarian?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "find_people_by_role",
+              "parameters": {
+                "role": "librarian"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 1.7321741580963135,
+      "timestamp": "2025-08-19T17:50:33.995702",
+      "error_message": "AI selected an unknown or unavailable tool: 'find_people_by_role'"
+    },
+    {
+      "query": "who is our librarian?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "find_people_by_role",
+              "parameters": {
+                "role": "librarian"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 1.5804979801177979,
+      "timestamp": "2025-08-19T17:52:28.323759",
+      "error_message": null
+    },
+    {
+      "query": "who is our librarian?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "find_people_by_role",
+              "parameters": {
+                "role": "librarian"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 7.72743034362793,
+      "timestamp": "2025-08-19T17:52:40.582377",
+      "error_message": null
+    },
+    {
+      "query": "random 1st year student",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "random",
+                "year_level": 1
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 1.6132464408874512,
+      "timestamp": "2025-08-19T17:56:46.844240",
+      "error_message": null
+    },
+    {
+      "query": "i need help finding some books",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "find_people_by_role",
+              "parameters": {
+                "role": "librarian"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 1.8512227535247803,
+      "timestamp": "2025-08-19T19:31:52.983048",
+      "error_message": null
+    },
+    {
+      "query": "who is our librarian",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "find_people_by_role",
+              "parameters": {
+                "role": "librarian"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 2.957303285598755,
+      "timestamp": "2025-08-19T19:32:53.236977",
+      "error_message": null
+    },
+    {
+      "query": "all faculty members",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "find_people_by_role",
+              "parameters": {
+                "role": "faculty"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 1.4762499332427979,
+      "timestamp": "2025-08-19T19:33:05.211824",
+      "error_message": null
+    },
+    {
+      "query": "who is our librarian",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "find_people_by_role",
+              "parameters": {
+                "role": "librarian"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 34.13249063491821,
+      "timestamp": "2025-08-19T20:13:03.857235",
+      "error_message": null
+    },
+    {
+      "query": "who is our Librarian",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "find_people_by_role",
+              "parameters": {
+                "role": "librarian"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 1.4519526958465576,
+      "timestamp": "2025-08-19T20:14:26.208275",
+      "error_message": null
+    },
+    {
+      "query": "16.Tell me about the people who work here permanently",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "find_people_by_role",
+              "parameters": {
+                "role": "permanent"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 1.6221704483032227,
+      "timestamp": "2025-08-19T20:26:55.559934",
+      "error_message": null
+    },
+    {
+      "query": "16.Tell me about the people who work here permanently",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "find_people_by_role",
+              "parameters": {
+                "role": "permanent employee"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 29.746285438537598,
+      "timestamp": "2025-08-19T20:27:48.075967",
+      "error_message": null
+    },
+    {
+      "query": "what is the contact number of our admin",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "find_people_by_role",
+              "parameters": {
+                "role": "admin"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 6.299037218093872,
+      "timestamp": "2025-08-19T20:30:01.876514",
+      "error_message": null
+    },
+    {
+      "query": "i need help finding some books",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool based on the user query.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "books"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 1.9699633121490479,
+      "timestamp": "2025-08-19T20:46:48.751311",
+      "error_message": "cannot access local variable 'collected_docs' where it is not associated with a value"
+    },
+    {
+      "query": "I want to learn how to dance.",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people_by_role",
+              "parameters": {
+                "role": "Dancer",
+                "employment_status": "Faculty"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 3.616816997528076,
+      "timestamp": "2025-08-19T21:25:45.261503",
+      "error_message": "AIAnalyst.find_people_by_role() got an unexpected keyword argument 'employment_status'"
+    },
+    {
+      "query": "who is the smartest bsit student",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 1.6283824443817139,
+      "timestamp": "2025-08-20T15:03:28.381241",
+      "error_message": "AI selected an unknown tool: 'get_student_grades'"
+    },
+    {
+      "query": "123123",
+      "plan": null,
+      "results_count": 0,
+      "execution_time": 1.1386818885803223,
+      "timestamp": "2025-08-20T16:18:29.250066",
+      "error_message": "'\\n    \"tool_name\"'"
+    },
+    {
+      "query": "hey",
+      "plan": null,
+      "results_count": 0,
+      "execution_time": 0.6800811290740967,
+      "timestamp": "2025-08-20T16:18:39.570756",
+      "error_message": "'\\n    \"tool_name\"'"
+    },
+    {
+      "query": "hey",
+      "plan": null,
+      "results_count": 0,
+      "execution_time": 0.7710714340209961,
+      "timestamp": "2025-08-20T16:20:56.216721",
+      "error_message": "'\\n    \"tool_name\"'"
+    },
+    {
+      "query": "grades of bsit students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 1.6618578433990479,
+      "timestamp": "2025-08-20T16:38:26.418390",
+      "error_message": "'AIAnalyst' object has no attribute 'db'"
+    },
+    {
+      "query": "bsit students grades",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 1.7667465209960938,
+      "timestamp": "2025-08-20T16:39:48.028333",
+      "error_message": "'AIAnalyst' object has no attribute 'db'"
     }
   ],
   "query_patterns": {
     "year:True_prog:False_rand:False_multi:False": {
-      "successful": 24,
+      "successful": 36,
       "failed": 1,
       "examples": [
         {
-          "query": "list down 1st year students",
+          "query": "2nd year students",
           "success": true
         },
         {
-          "query": "the curriculum of 1st year",
+          "query": "what is the grades of bsit 1st year students",
           "success": true
         },
         {
-          "query": "who is the adviser of year 2 section a",
+          "query": "who is the smartest bsit 1st year student",
           "success": true
         },
         {
-          "query": "who is the adviser of year 2 section a",
+          "query": "who has the highest gwa in 1st year students",
           "success": true
         },
         {
-          "query": "List all students in Year 2, Section A.",
+          "query": "1st year it students",
           "success": true
         }
       ]
     },
     "year:False_prog:True_rand:False_multi:False": {
-      "successful": 19,
+      "successful": 21,
       "failed": 5,
       "examples": [
-        {
-          "query": "schedule of bscs",
-          "success": true
-        },
-        {
-          "query": "schedules of bscs",
-          "success": true
-        },
         {
           "query": "bscs schedules",
           "success": true
@@ -20164,6 +26833,14 @@
         },
         {
           "query": "schedule of bscs",
+          "success": true
+        },
+        {
+          "query": "smartest student of bscs",
+          "success": true
+        },
+        {
+          "query": "bscs grades",
           "success": true
         }
       ]
@@ -20183,105 +26860,105 @@
       ]
     },
     "year:False_prog:False_rand:False_multi:True": {
-      "successful": 122,
-      "failed": 15,
+      "successful": 202,
+      "failed": 17,
       "examples": [
         {
-          "query": "who does deborah advises",
+          "query": "& C:/Users/oswed/AppData/Local/Programs/Python/Python313/python.exe \"c:/Users/oswed/Desktop/Copy of Green and Blue Travel Trifold Brochure (A4 (Landscape))/FINAL/g1_data_process.py\"",
           "success": true
         },
         {
-          "query": "I'm a second-year student and I need some help with a research paper. Who should I talk to and are they a professor?",
+          "query": "is there a conflict with schedule of luz villanueva and ana bautista",
           "success": true
         },
         {
-          "query": "what is his work schedule",
-          "success": false
-        },
-        {
-          "query": "what is his work schedule",
+          "query": "is there a conflict with schedule of luz villanueva and ana bautista",
           "success": true
         },
         {
-          "query": "am i handsome bro",
-          "success": false
+          "query": "is there a conflict with schedule of luz villanueva and ana bautista",
+          "success": true
+        },
+        {
+          "query": "& C:/Users/oswed/AppData/Local/Programs/Python/Python313/python.exe \"c:/Users/oswed/Desktop/Copy of Green and Blue Travel Trifold Brochure (A4 (Landscape))/FINAL/g1_data_process.py\"",
+          "success": true
         }
       ]
     },
     "year:False_prog:False_rand:False_multi:False": {
-      "successful": 179,
-      "failed": 36,
+      "successful": 347,
+      "failed": 64,
       "examples": [
         {
-          "query": "where can i see him? i need this asap",
+          "query": "bsit grades",
           "success": true
         },
         {
-          "query": "what specific time can i go to the library to see him",
+          "query": "who is the smartest student",
           "success": true
         },
         {
-          "query": "thank you",
-          "success": false
-        },
-        {
-          "query": "whos the smartest student in the school",
+          "query": "who is the smartest student all course",
           "success": true
         },
         {
-          "query": "what is his year section? where can i find him",
+          "query": "what is the schedule of danielg omez",
+          "success": true
+        },
+        {
+          "query": "all students",
           "success": true
         }
       ]
     },
     "year:True_prog:True_rand:False_multi:False": {
-      "successful": 27,
+      "successful": 31,
       "failed": 10,
       "examples": [
         {
-          "query": "who is the adviser of bscs year 2 section a",
-          "success": true
-        },
-        {
-          "query": "bscs 1st year schedule",
-          "success": true
-        },
-        {
-          "query": "bscs 2nd year section b schedule",
-          "success": true
-        },
-        {
-          "query": "Who advises the 2nd year BSCS students?",
-          "success": true
-        },
-        {
           "query": "what is the subject i will get if i am a 3rd year bscs students",
+          "success": true
+        },
+        {
+          "query": "schedules of bscs year 2 section a",
+          "success": true
+        },
+        {
+          "query": "bscs 2nd year section a schedule",
+          "success": true
+        },
+        {
+          "query": "10.Who advises the 2nd year BSCS students?",
+          "success": true
+        },
+        {
+          "query": "10.Who advises the 2nd year BSCS students?",
           "success": true
         }
       ]
     },
     "year:True_prog:True_rand:False_multi:True": {
-      "successful": 6,
+      "successful": 9,
       "failed": 1,
       "examples": [
-        {
-          "query": "is there any available grades data for 1st year bscs",
-          "success": true
-        },
-        {
-          "query": "give me one bscs 1st year and 2nd year student",
-          "success": true
-        },
-        {
-          "query": "the schedule for bscs 2nd year",
-          "success": true
-        },
         {
           "query": "bscs schedule for year 1",
           "success": false
         },
         {
           "query": "bscs schedule for year 1 section a",
+          "success": true
+        },
+        {
+          "query": "what is the schedule for bscs 2nd year students",
+          "success": true
+        },
+        {
+          "query": "who is the adviser for the bscs year 2 students?",
+          "success": true
+        },
+        {
+          "query": "who is the adviser for 2nd year bscs section a",
           "success": true
         }
       ]
@@ -20313,18 +26990,10 @@
       ]
     },
     "year:False_prog:True_rand:False_multi:True": {
-      "successful": 5,
+      "successful": 7,
       "failed": 0,
       "examples": [
         {
-          "query": "all bscs and it teachers",
-          "success": true
-        },
-        {
-          "query": "give me one tm student and one bscs student",
-          "success": true
-        },
-        {
           "query": "I need the contact info for the permanent faculty member who advises the second-year computer science students.",
           "success": true
         },
@@ -20334,6 +27003,14 @@
         },
         {
           "query": "I need the contact info for the permanent faculty member who advises the second-year computer science students.",
+          "success": true
+        },
+        {
+          "query": "19.I need the contact info for the permanent faculty member who advises the second-year computer science students",
+          "success": true
+        },
+        {
+          "query": "19.I need the contact info for the permanent faculty member who advises the second-year computer science students.",
           "success": true
         }
       ]
@@ -20349,19 +27026,27 @@
       ]
     },
     "year:True_prog:False_rand:True_multi:True": {
-      "successful": 1,
-      "failed": 2,
+      "successful": 5,
+      "failed": 3,
       "examples": [
         {
-          "query": "random 3rd year student",
+          "query": "random 1st year student",
           "success": false
         },
         {
-          "query": "give me a random 3rd year student",
-          "success": false
+          "query": "hello can you provide me a random 1st year student",
+          "success": true
         },
         {
-          "query": "give me a random 1st year student",
+          "query": "can you give me a random 2nd year student",
+          "success": true
+        },
+        {
+          "query": "list down random student of bsit 1st and 2nd year",
+          "success": true
+        },
+        {
+          "query": "list down random student of bsit 2nd year",
           "success": true
         }
       ]
