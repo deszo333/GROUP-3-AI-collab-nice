@@ -22273,6 +22273,27 @@
       "execution_time": 5.5346128940582275,
       "timestamp": "2025-08-20T17:18:10.146962",
       "error_message": null
+    },
+    {
+      "query": "hey",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "hey"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 130,
+      "execution_time": 4.587925910949707,
+      "timestamp": "2025-08-20T17:25:31.134584",
+      "error_message": null
     }
   ],
   "failed_queries": [
@@ -26886,13 +26907,9 @@
       ]
     },
     "year:False_prog:False_rand:False_multi:False": {
-      "successful": 347,
+      "successful": 348,
       "failed": 64,
       "examples": [
-        {
-          "query": "bsit grades",
-          "success": true
-        },
         {
           "query": "who is the smartest student",
           "success": true
@@ -26907,6 +26924,10 @@
         },
         {
           "query": "all students",
+          "success": true
+        },
+        {
+          "query": "hey",
           "success": true
         }
       ]

@@ -12428,18 +12428,15 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
     # ======================== USER INTERFACE ========================
     
     def show_search_options(self):
-        """Display search options to user"""
-        print("\n🔍 SEARCH OPTIONS:")
-        print("1. 🔎 Smart Search (AI-powered similarity)")
-        print("2. 📝 Exact Match Search")
-        print("3. 📊 Browse by Collection")
-        print("4. 📂 Load More Data")
-        print("5. 📋 Show All Collections")
-        print("6. 🗑️  Manage Collections")
-        print("7. 🧹 Clean Existing Duplicates")  # NEW OPTION
-        print("8. 🔧 Debug Search")
-        print("9. 🔧 Simple Search Debug")
-        print("10. ❌ Exit")   # Update this
+        """Displays the main menu options to the user."""
+        print("\n" + "="*50)
+        print(" MAIN MENU")
+        print("="*50)
+        print("1. 🤖 Engage AI School Analyst (Recommended)")
+        print("2. 📂 Load More Data")
+        print("3. 🗑️ Manage Collections")
+        print("4. ⚙️ System Options")
+        print("5. ❌ Exit")
 
         if self.collections:
             print(f"\n📚 Loaded Collections:")
