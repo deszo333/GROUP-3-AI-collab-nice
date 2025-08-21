@@ -23979,6 +23979,114 @@
       "execution_time": 2.4792392253875732,
       "timestamp": "2025-08-21T13:45:48.172965",
       "error_message": null
+    },
+    {
+      "query": "list bsit students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "student",
+                "program": "BSIT"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 32,
+      "execution_time": 2.852182149887085,
+      "timestamp": "2025-08-21T14:52:32.503417",
+      "error_message": null
+    },
+    {
+      "query": "schedule of daniel gomez",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Daniel Gomez"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 4.807726621627808,
+      "timestamp": "2025-08-21T14:52:47.690670",
+      "error_message": null
+    },
+    {
+      "query": "list bscs students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "student",
+                "program": "BSCS"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 61,
+      "execution_time": 4.673974275588989,
+      "timestamp": "2025-08-21T14:57:35.466699",
+      "error_message": null
+    },
+    {
+      "query": "list bscs students grades",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": "BSCS",
+                "year_level": 2
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 31,
+      "execution_time": 2.031852960586548,
+      "timestamp": "2025-08-21T14:57:40.605691",
+      "error_message": null
+    },
+    {
+      "query": "grades",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": "bscs"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 62,
+      "execution_time": 3.882646322250366,
+      "timestamp": "2025-08-21T14:57:55.836771",
+      "error_message": null
     }
   ],
   "failed_queries": [
@@ -28627,6 +28735,28 @@
       "execution_time": 7.3532397747039795,
       "timestamp": "2025-08-21T13:48:41.732208",
       "error_message": "AI failed to select a valid tool."
+    },
+    {
+      "query": "list bsit grades",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": 2
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 1.9297680854797363,
+      "timestamp": "2025-08-21T14:54:25.232217",
+      "error_message": "'AIAnalyst' object has no attribute 'list_students'"
     }
   ],
   "query_patterns": {
@@ -28657,17 +28787,9 @@
       ]
     },
     "year:False_prog:True_rand:False_multi:False": {
-      "successful": 22,
+      "successful": 24,
       "failed": 5,
       "examples": [
-        {
-          "query": "bscs students",
-          "success": true
-        },
-        {
-          "query": "schedule of bscs",
-          "success": true
-        },
         {
           "query": "smartest student of bscs",
           "success": true
@@ -28678,6 +28800,14 @@
         },
         {
           "query": "what are the courses of bscs",
+          "success": true
+        },
+        {
+          "query": "list bscs students",
+          "success": true
+        },
+        {
+          "query": "list bscs students grades",
           "success": true
         }
       ]
@@ -28723,28 +28853,28 @@
       ]
     },
     "year:False_prog:False_rand:False_multi:False": {
-      "successful": 400,
-      "failed": 70,
+      "successful": 403,
+      "failed": 71,
       "examples": [
-        {
-          "query": "all our profs",
-          "success": true
-        },
-        {
-          "query": "what are all the courses offered in this school",
-          "success": true
-        },
-        {
-          "query": "who are the full time faculty members",
-          "success": true
-        },
-        {
-          "query": "who are the full time faculty members",
-          "success": true
-        },
         {
           "query": "hey",
           "success": false
+        },
+        {
+          "query": "list bsit students",
+          "success": true
+        },
+        {
+          "query": "schedule of daniel gomez",
+          "success": true
+        },
+        {
+          "query": "list bsit grades",
+          "success": false
+        },
+        {
+          "query": "grades",
+          "success": true
         }
       ]
     },

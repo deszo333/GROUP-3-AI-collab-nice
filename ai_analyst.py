@@ -264,43 +264,35 @@ PROMPT_TEMPLATES = {
         """,
     "final_synthesizer": r"""
         ROLE:
-        You are a factual AI Analyst.
+        You are a precise and factual AI Data Analyst.
 
         PRIMARY GOAL:
-        Your goal is to synthesize the provided "Factual Documents" into a single, clear, and accurate answer to the "User's Query".
+        Your goal is to directly answer the User's Query by analyzing and synthesizing the provided "Factual Documents".
 
-        ABSOLUTE RULES:
-        - **USE ONLY THE PROVIDED DOCUMENTS.** Do not use any outside knowledge.
-        - **CITE YOUR SOURCES.** For every piece of information, you MUST append its source collection like this: [source_collection_name].
-        - **DO NOT MAKE UP INFORMATION.** If the answer is not in the documents, you MUST state that the information could not be found.
 
-        ---
-        ANALYSIS PROCESS (Follow these steps):
+        CORE INSTRUCTIONS:
+        1.  **EVALUATE AND ANSWER:** Your primary task is to directly answer the user's query. First, evaluate all provided documents to identify which ones are relevant to the current query.
 
-        1.  **FILTER FIRST:** Before writing, identify the core constraints in the User's Query (e.g., "full-time", "professors", "BSCS program"). Go through every document and create an internal list of ONLY the people or items that STRICTLY match ALL constraints. Your final answer and summary MUST be based exclusively on this filtered list.
+        2.  **LINK ENTITIES:** If documents refer to the same person with different names (e.g., 'Dr. Smith' and 'Professor John Smith'), combine their information.
 
-        2.  **LINK ENTITIES:** If a person is mentioned with different names across documents (e.g., 'Dr. Smith' and 'Professor John Smith'), you MUST treat them as the same person and combine their information.
+        3.  **INFER CONNECTIONS:** If a student's profile and a class schedule document share the same `program`, `year_level`, and `section`, you MUST state that the schedule applies to that student.
 
-        3.  **PRECISE SUMMARIZATION:** When creating a summary sentence (e.g., "There are X professors..."), ensure the count (X) and category ('professors') are strictly accurate based on your filtered list from Step 1.
+        4.  **SYNTHESIZE MIXED DOCUMENTS:** When you receive multiple documents for the same entities (e.g., a student's profile AND their separate grades document), you MUST combine the information.
 
-        4.  **INFER CONNECTIONS:** If a student record and a class schedule share the same `program`, `year_level`, and `section`, you MUST explicitly state that the schedule belongs to that student.
-
-        5.  **INTERPRET NAMES:** If the user's query is for a single name (e.g., "who is Lee"), you MUST provide information for all people who have that name as a first OR last name.
-
-        6.  **PRESENT FULL LISTS:** If the documents contain a list of items (e.g., a list of students), you MUST present the complete list.
+        5.  **CITE EVERYTHING:** You MUST append a source citation `[source_collection_name]` to every piece of information you provide.
 
         ---
-        OUTPUT FORMATTING:
+        OUTPUT RULES (Strictly Follow):
 
-        - Start your response with a direct, one-sentence summary that is **factually precise** based on your filtered list from Step 1.
-        - Follow the summary with a more detailed breakdown. Use bullet points for lists and details to ensure clarity.
-        - Be concise and factual.
+        - **DO NOT SHOW YOUR WORK:** Do not include sections like "Analysis", "Conclusion", "Summary:", or "Note:".
+        - **START WITH THE ANSWER:** Begin your response with a direct answer.
+        - **PROVIDE DETAILS:** After the summary sentence, provide a bulleted list with the supporting details.
 
         ---
         HANDLING SPECIAL CASES:
 
-        - **If `status` is `empty`:** State conversationally that you could not find the requested information.
-        - **If `status` is `error`:** State conversationally that there was a technical problem.
+        - **If `status` is `empty`:** State that you could not find the requested information.
+        - **If `status` is `error`:** State that there was a technical problem.
 
         ---
         Factual Documents:
@@ -309,7 +301,7 @@ PROMPT_TEMPLATES = {
         User's Query:
         {query}
         ---
-        Your concise analysis (with citations):
+        Your direct and concise analysis:
         """,
 }
 
@@ -620,7 +612,7 @@ class AIAnalyst:
             if year_level:
                 student_filters['year_level'] = year_level
 
-            student_docs = self.list_students(**student_filters)
+            student_docs = self.find_people(**student_filters)
             if not student_docs or "status" in (student_docs[0] or {}).get("metadata", {}):
                 return [{"status": "empty", "summary": f"I couldn't find any students matching those criteria."}]
                 
@@ -1698,6 +1690,10 @@ class AIAnalyst:
         last_plan_for_training = None
         chat_history: List[dict] = []
 
+         # --- ✨ NEW: Set the maximum number of turns to remember ---
+        # A "turn" is one user query and one AI response. 2 turns = 4 messages.
+        MAX_HISTORY_TURNS = 2
+
         while True:
             q = input("\n👤 You: ").strip()
             if not q: continue
@@ -1714,12 +1710,10 @@ class AIAnalyst:
                     print("⚠️ No plan to save. Please run a query first.")
                 continue
 
-            # This single call now handles everything correctly
             final_answer, plan_json = self.execute_reasoning_plan(q, history=chat_history)
             
             print("\n🧠 Analyst:", final_answer)
             
-            # Store the plan for the 'train' command
             if plan_json and "plan" in plan_json:
                 last_query = q
                 last_plan_for_training = plan_json
@@ -1727,6 +1721,13 @@ class AIAnalyst:
             # Update the history
             chat_history.append({"role": "user", "content": q})
             chat_history.append({"role": "assistant", "content": final_answer})
+
+            # --- ✨ NEW: Trim the history to the desired size ---
+            # This keeps the conversation history from growing indefinitely.
+            history_limit = MAX_HISTORY_TURNS * 2 # Multiply by 2 for user + assistant messages
+            if len(chat_history) > history_limit:
+                self.debug(f"📜 History limit reached. Trimming to last {MAX_HISTORY_TURNS} turns.")
+                chat_history = chat_history[-history_limit:]
 
 # -------------------------------
 # Helper to load config.json
