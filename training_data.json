@@ -22294,6 +22294,1691 @@
       "execution_time": 4.587925910949707,
       "timestamp": "2025-08-20T17:25:31.134584",
       "error_message": null
+    },
+    {
+      "query": "who is the smartest student",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "student_name": null,
+                "program": null,
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 3,
+      "execution_time": 2.153090476989746,
+      "timestamp": "2025-08-20T17:35:37.294365",
+      "error_message": null
+    },
+    {
+      "query": "who are the full time here",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": null,
+                "employment_status": "full time"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 131,
+      "execution_time": 3.3592369556427,
+      "timestamp": "2025-08-20T19:27:19.396486",
+      "error_message": null
+    },
+    {
+      "query": "who are the full time here",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": null,
+                "employment_status": "full time"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 131,
+      "execution_time": 3.1041908264160156,
+      "timestamp": "2025-08-20T19:27:37.877523",
+      "error_message": null
+    },
+    {
+      "query": "who are the full time here",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": null,
+                "employment_status": "full time"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.09125018119812,
+      "timestamp": "2025-08-20T19:27:58.455227",
+      "error_message": null
+    },
+    {
+      "query": "WHO ARE THE FULL-TIME HERE",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": null,
+                "employment_status": "Full-Time"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 1.5707440376281738,
+      "timestamp": "2025-08-20T19:28:18.200043",
+      "error_message": null
+    },
+    {
+      "query": "who is our full time",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": null,
+                "employment_status": "permanent"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 1.6679894924163818,
+      "timestamp": "2025-08-20T19:29:43.249601",
+      "error_message": null
+    },
+    {
+      "query": "what is the bloodtype of her",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "answer_question_about_person",
+              "parameters": {
+                "person_name": "Elizabeth Angela Brown",
+                "question": "What is her blood type?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.442061424255371,
+      "timestamp": "2025-08-20T19:40:49.885816",
+      "error_message": null
+    },
+    {
+      "query": "Who is Harper mary?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "Who is Harper Mary?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 11,
+      "execution_time": 9.47473931312561,
+      "timestamp": "2025-08-20T20:17:22.536917",
+      "error_message": null
+    },
+    {
+      "query": "bsit grades",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": null,
+                "year_level": null,
+                "student_name": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 643.514565706253,
+      "timestamp": "2025-08-20T20:56:46.164740",
+      "error_message": null
+    },
+    {
+      "query": "grades of bsit students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 34,
+      "execution_time": 480.90027594566345,
+      "timestamp": "2025-08-20T21:44:20.524363",
+      "error_message": null
+    },
+    {
+      "query": "bsit grades",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": "BSIT"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 34,
+      "execution_time": 136.3587281703949,
+      "timestamp": "2025-08-21T09:30:53.323207",
+      "error_message": null
+    },
+    {
+      "query": "who is the smartest person in school",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "undisclosed program (since no specific academic program was mentioned)",
+                "year_level": "all levels"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 96,
+      "execution_time": 15.956563949584961,
+      "timestamp": "2025-08-21T09:32:30.943574",
+      "error_message": null
+    },
+    {
+      "query": "who is the guardian of lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "answer_question_about_person",
+              "parameters": {
+                "person_name": "Lee Pace",
+                "question": "Who is his guardian?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 3,
+      "execution_time": 2.502171754837036,
+      "timestamp": "2025-08-21T09:43:03.039655",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Lee Pace"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 6.630349397659302,
+      "timestamp": "2025-08-21T09:43:39.308967",
+      "error_message": null
+    },
+    {
+      "query": "exitt",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "exitt"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 94,
+      "execution_time": 2.3929553031921387,
+      "timestamp": "2025-08-21T09:43:47.842056",
+      "error_message": null
+    },
+    {
+      "query": "who is the guardian of lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "answer_question_about_person",
+              "parameters": {
+                "person_name": "Lee Pace",
+                "question": "Who is his guardian?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 3,
+      "execution_time": 103.19192337989807,
+      "timestamp": "2025-08-21T09:45:45.192615",
+      "error_message": null
+    },
+    {
+      "query": "who is the smartest student",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": null,
+                "year_level": null,
+                "question": "Who has the highest grades in computer science?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 3,
+      "execution_time": 13.73478388786316,
+      "timestamp": "2025-08-21T09:46:48.191394",
+      "error_message": null
+    },
+    {
+      "query": "what is the height of angela elizabeth",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "What is Angela Elizabeth's height?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 104,
+      "execution_time": 12.412923097610474,
+      "timestamp": "2025-08-21T09:50:44.788306",
+      "error_message": null
+    },
+    {
+      "query": "who is harper mary",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "answer_question_about_person",
+              "parameters": {
+                "person_name": "Harper Mary",
+                "question": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 62.07516694068909,
+      "timestamp": "2025-08-21T09:55:41.121628",
+      "error_message": null
+    },
+    {
+      "query": "whats the date of birt of harper?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "What is the birthdate of Harper?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 74,
+      "execution_time": 13.82247281074524,
+      "timestamp": "2025-08-21T09:56:43.710476",
+      "error_message": null
+    },
+    {
+      "query": "is harper a filipino",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "is Harper Filipino?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 74,
+      "execution_time": 11.760579109191895,
+      "timestamp": "2025-08-21T09:57:46.846970",
+      "error_message": null
+    },
+    {
+      "query": "whats the date of birt of harper?",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "search_database",
+              "parameters": {
+                "query_text": "Birthdate of Harper"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 74,
+      "execution_time": 11.926612377166748,
+      "timestamp": "2025-08-21T09:58:19.365115",
+      "error_message": null
+    },
+    {
+      "query": "who is the guardian of lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_person_info",
+              "parameters": {
+                "question": "What is his contact number?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 104,
+      "execution_time": 87.05413007736206,
+      "timestamp": "2025-08-21T10:21:49.328235",
+      "error_message": null
+    },
+    {
+      "query": "who is the guardian of lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "answer_question_about_person",
+              "parameters": {
+                "person_name": "Lee Pace",
+                "question": "Who is his guardian?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 3,
+      "execution_time": 113.55375909805298,
+      "timestamp": "2025-08-21T10:29:12.826855",
+      "error_message": null
+    },
+    {
+      "query": "who is mary harper",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "answer_question_about_person",
+              "parameters": {
+                "person_name": "Mary Harper",
+                "question": "Who is she?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 13.480786800384521,
+      "timestamp": "2025-08-21T10:33:40.864686",
+      "error_message": null
+    },
+    {
+      "query": "what is the height of her",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "answer_question_about_person",
+              "parameters": {
+                "person_name": "",
+                "question": "What is her height?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 12.868736505508423,
+      "timestamp": "2025-08-21T10:34:03.899567",
+      "error_message": null
+    },
+    {
+      "query": "who is kathryn julie hodges",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "",
+                "employment_status": ""
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 100,
+      "execution_time": 13.243254661560059,
+      "timestamp": "2025-08-21T10:35:52.794072",
+      "error_message": null
+    },
+    {
+      "query": "who is harper kimberly",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "answer_question_about_person",
+              "parameters": {
+                "person_name": "Harper Kimberly",
+                "question": "Who is Harper Kimberly?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 3.165398359298706,
+      "timestamp": "2025-08-21T10:40:23.259898",
+      "error_message": null
+    },
+    {
+      "query": "what usher height",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "answer_question_about_person",
+              "parameters": {
+                "person_name": "usher",
+                "question": "what is his height?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.144214630126953,
+      "timestamp": "2025-08-21T10:40:31.182619",
+      "error_message": null
+    },
+    {
+      "query": "all our professors",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "Professor",
+                "employment_status": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 5,
+      "execution_time": 6.277770042419434,
+      "timestamp": "2025-08-21T10:41:35.243972",
+      "error_message": null
+    },
+    {
+      "query": "all our professors of cte",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "Professor",
+                "department": "CTE"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 1.8450300693511963,
+      "timestamp": "2025-08-21T10:41:48.867035",
+      "error_message": null
+    },
+    {
+      "query": "who is our professors",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "Professor"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 5,
+      "execution_time": 106.13537907600403,
+      "timestamp": "2025-08-21T10:45:31.684919",
+      "error_message": null
+    },
+    {
+      "query": "what is the height of karen jennifer",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "answer_question_about_person",
+              "parameters": {
+                "person_name": "Karen Jennifer",
+                "question": "What is her height?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 13.336098909378052,
+      "timestamp": "2025-08-21T10:46:14.725624",
+      "error_message": null
+    },
+    {
+      "query": "what is the employment status of karen jennifer",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": null,
+                "employment_status": "Known"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 9,
+      "execution_time": 11.555845975875854,
+      "timestamp": "2025-08-21T10:46:47.296474",
+      "error_message": null
+    },
+    {
+      "query": "what is the scheduleof karen jennifer",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Karen Jennifer"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 10.967615127563477,
+      "timestamp": "2025-08-21T10:47:09.977752",
+      "error_message": null
+    },
+    {
+      "query": "i would like to know more about all the courses offered in this school",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "query_curriculum",
+              "parameters": {
+                "program": "",
+                "year_level": null,
+                "semester": null,
+                "subject_code": null,
+                "subject_name": null,
+                "subject_type": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 9,
+      "execution_time": 31.937251329421997,
+      "timestamp": "2025-08-21T11:17:01.832417",
+      "error_message": null
+    },
+    {
+      "query": "i would like to know more about all the courses offered in this school",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "query_curriculum",
+              "parameters": {
+                "program": "",
+                "year_level": null,
+                "semester": null,
+                "subject_code": null,
+                "subject_name": null,
+                "subject_type": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 3.4889914989471436,
+      "timestamp": "2025-08-21T11:17:53.264835",
+      "error_message": null
+    },
+    {
+      "query": "what are the courses of bscs",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "query_curriculum",
+              "parameters": {
+                "program": "BSCS",
+                "year_level": null,
+                "semester": null,
+                "subject_code": null,
+                "subject_name": null,
+                "subject_type": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 4.258267164230347,
+      "timestamp": "2025-08-21T11:18:14.681365",
+      "error_message": null
+    },
+    {
+      "query": "who is the smartest student",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": null,
+                "year_level": null,
+                "query": "Who are the students with the highest grades?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 154.04249334335327,
+      "timestamp": "2025-08-21T11:24:01.137289",
+      "error_message": null
+    },
+    {
+      "query": "what is the schedule of paolo torres",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Paolo Torres"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 13.38904595375061,
+      "timestamp": "2025-08-21T11:25:28.723262",
+      "error_message": null
+    },
+    {
+      "query": "i need help with finding books",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "Librarian"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 10.421160459518433,
+      "timestamp": "2025-08-21T11:26:30.219078",
+      "error_message": null
+    },
+    {
+      "query": "who is the guardian of paolo",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "(leave empty for general search)",
+                "employment_status": "(choose 'paid' or 'unpaid')"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 103,
+      "execution_time": 20.31531572341919,
+      "timestamp": "2025-08-21T11:27:44.785096",
+      "error_message": null
+    },
+    {
+      "query": "who is the smartest student",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "student_name": "",
+                "program": "",
+                "year_level": ""
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 3,
+      "execution_time": 109.88469576835632,
+      "timestamp": "2025-08-21T11:40:19.936505",
+      "error_message": null
+    },
+    {
+      "query": "who is the guardian of daniel gomez",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "answer_question_about_person",
+              "parameters": {
+                "person_name": "Daniel Gomez",
+                "question": "Who is his guardian?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 5,
+      "execution_time": 14.311625003814697,
+      "timestamp": "2025-08-21T11:40:47.019135",
+      "error_message": null
+    },
+    {
+      "query": "who is juan villanueva",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Juan Villanueva"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 12.271050453186035,
+      "timestamp": "2025-08-21T11:41:16.002671",
+      "error_message": null
+    },
+    {
+      "query": "what are the courses available in this school",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "query_curriculum",
+              "parameters": {
+                "program": "",
+                "year_level": "",
+                "subject_code": "",
+                "subject_type": ""
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 133,
+      "execution_time": 16.41402292251587,
+      "timestamp": "2025-08-21T11:41:45.040356",
+      "error_message": null
+    },
+    {
+      "query": "what are the courses available in this school",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "query_curriculum",
+              "parameters": {
+                "program": "",
+                "year_level": "",
+                "subject_code": "",
+                "subject_type": ""
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 4,
+      "execution_time": 17.17840576171875,
+      "timestamp": "2025-08-21T11:44:33.629171",
+      "error_message": null
+    },
+    {
+      "query": "all your data summary",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "",
+                "year_level": ""
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 77,
+      "execution_time": 115.24134111404419,
+      "timestamp": "2025-08-21T12:04:55.334477",
+      "error_message": null
+    },
+    {
+      "query": "what is the height of professor elizabeth",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "answer_question_about_person",
+              "parameters": {
+                "person_name": "Professor Elizabeth",
+                "question": "What is her height?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 17.12035584449768,
+      "timestamp": "2025-08-21T12:06:12.032218",
+      "error_message": null
+    },
+    {
+      "query": "who is elizabeth",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Elizabeth"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 31.69260334968567,
+      "timestamp": "2025-08-21T12:07:30.083162",
+      "error_message": null
+    },
+    {
+      "query": "who is Elizabeth Angela Brown",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Elizabeth Angela Brown"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 12.548423290252686,
+      "timestamp": "2025-08-21T12:08:28.162632",
+      "error_message": null
+    },
+    {
+      "query": "who is professor elizabeth angela brown",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Professor Elizabeth Angela Brown"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 12.495142698287964,
+      "timestamp": "2025-08-21T12:08:55.045280",
+      "error_message": null
+    },
+    {
+      "query": "who is professor elizabeth",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "professor elizabeth"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 3.5172929763793945,
+      "timestamp": "2025-08-21T12:10:20.859356",
+      "error_message": null
+    },
+    {
+      "query": "who is Elizabeth Angela Brown",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Elizabeth Angela Brown"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.7268550395965576,
+      "timestamp": "2025-08-21T12:10:38.037105",
+      "error_message": null
+    },
+    {
+      "query": "WHAT IS PROFESSOR ELIZABETH HEIGHT",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "answer_question_about_person",
+              "parameters": {
+                "person_name": "Professor Elizabeth",
+                "question": "What is her height?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 3.9353561401367188,
+      "timestamp": "2025-08-21T12:19:16.612086",
+      "error_message": null
+    },
+    {
+      "query": "who is professor elizabeth",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "professor elizabeth"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 3.122605562210083,
+      "timestamp": "2025-08-21T12:19:31.063423",
+      "error_message": null
+    },
+    {
+      "query": "who is elizabeth",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "elizabeth"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.9783878326416016,
+      "timestamp": "2025-08-21T12:19:58.758561",
+      "error_message": null
+    },
+    {
+      "query": "who is elizabeth angela brwn",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Elizabeth Angela Brwn"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 3.51448392868042,
+      "timestamp": "2025-08-21T12:20:36.335031",
+      "error_message": null
+    },
+    {
+      "query": "who is elizabeth angela brown",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Elizabeth Angela Brown"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.478630304336548,
+      "timestamp": "2025-08-21T12:20:43.938525",
+      "error_message": null
+    },
+    {
+      "query": "who is elizabeth angela brown",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_person_schedule",
+              "parameters": {
+                "person_name": "Elizabeth Angela Brown"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.684915542602539,
+      "timestamp": "2025-08-21T12:21:09.767390",
+      "error_message": null
+    },
+    {
+      "query": "what is the height of professor elizabeth",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "answer_question_about_person",
+              "parameters": {
+                "person_name": "Elizabeth Angela Brown",
+                "question": "What is her height?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 4.794261932373047,
+      "timestamp": "2025-08-21T12:21:23.750384",
+      "error_message": null
+    },
+    {
+      "query": "all our profs",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "professor",
+                "department": ""
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 3,
+      "execution_time": 2.423844575881958,
+      "timestamp": "2025-08-21T12:21:42.919838",
+      "error_message": null
+    },
+    {
+      "query": "what are all the courses offered in this school",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "query_curriculum",
+              "parameters": {}
+            }
+          }
+        ]
+      },
+      "results_count": 3,
+      "execution_time": 114.62646627426147,
+      "timestamp": "2025-08-21T12:29:27.172746",
+      "error_message": null
+    },
+    {
+      "query": "who are the professors of the bscs program",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_faculty_by_class_count",
+              "parameters": {
+                "find_most": true
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 9,
+      "execution_time": 11.258506059646606,
+      "timestamp": "2025-08-21T12:30:11.533004",
+      "error_message": null
+    },
+    {
+      "query": "who are all our professors",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "faculty"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 137,
+      "execution_time": 14.818968534469604,
+      "timestamp": "2025-08-21T12:31:00.461190",
+      "error_message": null
+    },
+    {
+      "query": "who are the professors of the bscs program",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "professor",
+                "department": "bscs"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 137,
+      "execution_time": 35.92677664756775,
+      "timestamp": "2025-08-21T12:35:10.224236",
+      "error_message": null
+    },
+    {
+      "query": "who are the professors of bscs",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_faculty_by_class_count",
+              "parameters": {
+                "find_most": false
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 9,
+      "execution_time": 109.9267852306366,
+      "timestamp": "2025-08-21T12:46:12.982384",
+      "error_message": null
+    },
+    {
+      "query": "who are the professors of bscs",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "professor",
+                "department": "BSCS"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 110,
+      "execution_time": 113.45463442802429,
+      "timestamp": "2025-08-21T12:59:47.331746",
+      "error_message": null
+    },
+    {
+      "query": "who are the professors of bscs",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "professor",
+                "department": "BSCS"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 1,
+      "execution_time": 110.72108459472656,
+      "timestamp": "2025-08-21T13:09:21.124552",
+      "error_message": null
+    },
+    {
+      "query": "who are all the professors in all course",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "list_students",
+              "parameters": {
+                "program": "",
+                "year_level": ""
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 107,
+      "execution_time": 136.99177408218384,
+      "timestamp": "2025-08-21T13:20:33.473098",
+      "error_message": null
+    },
+    {
+      "query": "who are all the professors in all course",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "faculty"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 5,
+      "execution_time": 3.4825823307037354,
+      "timestamp": "2025-08-21T13:29:11.105871",
+      "error_message": null
+    },
+    {
+      "query": "who are all the professors in all course",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "faculty",
+                "department": "all"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 110,
+      "execution_time": 6.949929475784302,
+      "timestamp": "2025-08-21T13:29:49.965229",
+      "error_message": null
+    },
+    {
+      "query": "list down all the professors in every department",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "faculty",
+                "department": "all"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 110,
+      "execution_time": 5.174030780792236,
+      "timestamp": "2025-08-21T13:31:02.820262",
+      "error_message": null
+    },
+    {
+      "query": "list all the professors in every department",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "name": "",
+                "role": "faculty",
+                "program": "",
+                "year_level": "",
+                "department": ""
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 5,
+      "execution_time": 114.58450984954834,
+      "timestamp": "2025-08-21T13:35:42.919160",
+      "error_message": null
+    },
+    {
+      "query": "who are the full time faculty members",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "faculty"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 5,
+      "execution_time": 9.894575357437134,
+      "timestamp": "2025-08-21T13:36:36.700493",
+      "error_message": null
+    },
+    {
+      "query": ":list all the professors in every department",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "faculty"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 5,
+      "execution_time": 2.6286461353302,
+      "timestamp": "2025-08-21T13:45:01.594107",
+      "error_message": null
+    },
+    {
+      "query": "who are the full time faculty members",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "faculty",
+                "employment_status": "full-time"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 2,
+      "execution_time": 2.4792392253875732,
+      "timestamp": "2025-08-21T13:45:48.172965",
+      "error_message": null
     }
   ],
   "failed_queries": [
@@ -26811,6 +28496,137 @@
       "execution_time": 1.7667465209960938,
       "timestamp": "2025-08-20T16:39:48.028333",
       "error_message": "'AIAnalyst' object has no attribute 'db'"
+    },
+    {
+      "query": "who are the male proffesors",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "find_people",
+              "parameters": {
+                "role": "Professor",
+                "gender": "Male"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 2.8226306438446045,
+      "timestamp": "2025-08-20T20:16:59.725024",
+      "error_message": "AIAnalyst.find_people() got an unexpected keyword argument 'gender'"
+    },
+    {
+      "query": "grades of bsit students",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "get_student_grades",
+              "parameters": {
+                "program": "BSIT",
+                "year_level": null,
+                "section": null
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 246.93207359313965,
+      "timestamp": "2025-08-20T21:02:25.773121",
+      "error_message": "AIAnalyst.get_student_grades() got an unexpected keyword argument 'section'"
+    },
+    {
+      "query": "bsit grades",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": null
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 4.020963191986084,
+      "timestamp": "2025-08-21T09:25:36.809277",
+      "error_message": "AI failed to select a valid tool."
+    },
+    {
+      "query": "bsit grades",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": null
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 3.7300822734832764,
+      "timestamp": "2025-08-21T09:25:57.070705",
+      "error_message": "AI failed to select a valid tool."
+    },
+    {
+      "query": "bsit grades",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": null
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 4.014132022857666,
+      "timestamp": "2025-08-21T09:26:03.273956",
+      "error_message": "AI failed to select a valid tool."
+    },
+    {
+      "query": "who is the guardian of lee pace",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": {
+              "tool_name": "answer_question_about_person",
+              "parameters": {
+                "person_name": "Lee Pace",
+                "question": "Who is his guardian?"
+              }
+            }
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 1.902827262878418,
+      "timestamp": "2025-08-21T09:41:05.400187",
+      "error_message": "'AIAnalyst' object has no attribute 'llm'"
+    },
+    {
+      "query": "hey",
+      "plan": {
+        "plan": [
+          {
+            "step": 1,
+            "thought": "AI selected the best tool.",
+            "tool_call": null
+          }
+        ]
+      },
+      "results_count": 0,
+      "execution_time": 7.3532397747039795,
+      "timestamp": "2025-08-21T13:48:41.732208",
+      "error_message": "AI failed to select a valid tool."
     }
   ],
   "query_patterns": {
@@ -26841,13 +28657,9 @@
       ]
     },
     "year:False_prog:True_rand:False_multi:False": {
-      "successful": 21,
+      "successful": 22,
       "failed": 5,
       "examples": [
-        {
-          "query": "bscs schedules",
-          "success": true
-        },
         {
           "query": "bscs students",
           "success": true
@@ -26862,6 +28674,10 @@
         },
         {
           "query": "bscs grades",
+          "success": true
+        },
+        {
+          "query": "what are the courses of bscs",
           "success": true
         }
       ]
@@ -26881,54 +28697,54 @@
       ]
     },
     "year:False_prog:False_rand:False_multi:True": {
-      "successful": 202,
-      "failed": 17,
+      "successful": 221,
+      "failed": 18,
       "examples": [
         {
-          "query": "& C:/Users/oswed/AppData/Local/Programs/Python/Python313/python.exe \"c:/Users/oswed/Desktop/Copy of Green and Blue Travel Trifold Brochure (A4 (Landscape))/FINAL/g1_data_process.py\"",
+          "query": "who are all the professors in all course",
           "success": true
         },
         {
-          "query": "is there a conflict with schedule of luz villanueva and ana bautista",
+          "query": "who are all the professors in all course",
           "success": true
         },
         {
-          "query": "is there a conflict with schedule of luz villanueva and ana bautista",
+          "query": "list down all the professors in every department",
           "success": true
         },
         {
-          "query": "is there a conflict with schedule of luz villanueva and ana bautista",
+          "query": "list all the professors in every department",
           "success": true
         },
         {
-          "query": "& C:/Users/oswed/AppData/Local/Programs/Python/Python313/python.exe \"c:/Users/oswed/Desktop/Copy of Green and Blue Travel Trifold Brochure (A4 (Landscape))/FINAL/g1_data_process.py\"",
+          "query": ":list all the professors in every department",
           "success": true
         }
       ]
     },
     "year:False_prog:False_rand:False_multi:False": {
-      "successful": 348,
-      "failed": 64,
+      "successful": 400,
+      "failed": 70,
       "examples": [
         {
-          "query": "who is the smartest student",
+          "query": "all our profs",
           "success": true
         },
         {
-          "query": "who is the smartest student all course",
+          "query": "what are all the courses offered in this school",
           "success": true
         },
         {
-          "query": "what is the schedule of danielg omez",
+          "query": "who are the full time faculty members",
           "success": true
         },
         {
-          "query": "all students",
+          "query": "who are the full time faculty members",
           "success": true
         },
         {
           "query": "hey",
-          "success": true
+          "success": false
         }
       ]
     },
@@ -27011,27 +28827,27 @@
       ]
     },
     "year:False_prog:True_rand:False_multi:True": {
-      "successful": 7,
+      "successful": 12,
       "failed": 0,
       "examples": [
         {
-          "query": "I need the contact info for the permanent faculty member who advises the second-year computer science students.",
+          "query": "who are the professors of the bscs program",
           "success": true
         },
         {
-          "query": "I need the contact info for the permanent faculty member who advises the second-year computer science students.",
+          "query": "who are the professors of the bscs program",
           "success": true
         },
         {
-          "query": "I need the contact info for the permanent faculty member who advises the second-year computer science students.",
+          "query": "who are the professors of bscs",
           "success": true
         },
         {
-          "query": "19.I need the contact info for the permanent faculty member who advises the second-year computer science students",
+          "query": "who are the professors of bscs",
           "success": true
         },
         {
-          "query": "19.I need the contact info for the permanent faculty member who advises the second-year computer science students.",
+          "query": "who are the professors of bscs",
           "success": true
         }
       ]

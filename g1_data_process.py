@@ -46,14 +46,19 @@ class SmartStudentDataSystem:
         print(f"🔧 Debug mode is now {status}.")
 
     def toggle_api_mode(self):
-        """Toggles the API mode between online and offline."""
+        """Toggles the API mode between online, offline, and split."""
         if self.api_mode == 'online':
             self.api_mode = 'offline'
-        else:
+        elif self.api_mode == 'offline':
+            self.api_mode = 'split'
+        else: # It was 'split'
             self.api_mode = 'online'
+        
         print(f"📡 API mode is now set to: {self.api_mode.upper()}")
         if self.api_mode == 'offline':
-            print("   (Ensure Ollama is running with the 'mistral:instruct' model available)")
+            print("   (Both Planner and Synthesizer will use local Ollama)")
+        elif self.api_mode == 'split':
+            print("   (Planner will use local Ollama, Synthesizer will use the online API)")
 
     def manage_system_options(self):
         """Menu for managing system options like debug and API mode."""
@@ -12527,11 +12532,26 @@ Guardian Contact: {student_data.get('guardian_contact', 'N/A')}
                 choice = input("\n💡 Choose an option: ").strip()
 
                 if choice == "1":
-                    # This is the new integration point from the README
-                    print("🚀 Initializing AI School Analyst...")
-                    llm_cfg = load_llm_config(mode=self.api_mode) 
-                    ai = AIAnalyst(self.collections, llm_cfg)
+                    # --- 1. Load the ENTIRE config.json file ---
+                    try:
+                        # This assumes 'config.json' is in the same directory
+                        with open("config.json", "r", encoding="utf-8") as f:
+                            full_config = json.load(f)
+                    except FileNotFoundError:
+                        print("❌ config.json not found! Cannot start AI Analyst.")
+                        continue # Go back to the menu
+
+                    # --- 2. Initialize AIAnalyst with the selected mode ---
+                    print(f"🚀 Initializing AI School Analyst in {self.api_mode.upper()} mode...")
+                    
+                    # Pass the full config and the selected execution_mode
+                    ai = AIAnalyst(
+                        collections=self.collections, 
+                        llm_config=full_config,
+                        execution_mode=self.api_mode # self.api_mode is our toggle
+                    )
                     ai.start_ai_analyst()
+
 
                 elif choice == "2":
                     self.load_new_data()
