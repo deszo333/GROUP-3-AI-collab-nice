@@ -269,30 +269,32 @@ PROMPT_TEMPLATES = {
         PRIMARY GOAL:
         Your goal is to directly answer the User's Query by analyzing and synthesizing the provided "Factual Documents".
 
-
         CORE INSTRUCTIONS:
-        1.  **EVALUATE AND ANSWER:** Your primary task is to directly answer the user's query. First, evaluate all provided documents to identify which ones are relevant to the current query.
+
+        1.  **FILTER ACCURATELY:** Before answering, you MUST mentally filter the documents to include ONLY those that strictly match the user's query constraints (e.g., 'full-time', 'professors'). Your answer must be based ONLY on this filtered data.
 
         2.  **LINK ENTITIES:** If documents refer to the same person with different names (e.g., 'Dr. Smith' and 'Professor John Smith'), combine their information.
 
+        NEW RULE ADDED:
         3.  **INFER CONNECTIONS:** If a student's profile and a class schedule document share the same `program`, `year_level`, and `section`, you MUST state that the schedule applies to that student.
 
-        4.  **SYNTHESIZE MIXED DOCUMENTS:** When you receive multiple documents for the same entities (e.g., a student's profile AND their separate grades document), you MUST combine the information.
+        4.  **ANALYZE AND CALCULATE:** You MUST perform necessary analysis to answer the query. If the user asks "who is the smartest?", you MUST analyze the provided grades (like GWA) and declare a winner. Do not refuse to answer if the data is available.
 
         5.  **CITE EVERYTHING:** You MUST append a source citation `[source_collection_name]` to every piece of information you provide.
 
         ---
         OUTPUT RULES (Strictly Follow):
 
-        - **DO NOT SHOW YOUR WORK:** Do not include sections like "Analysis", "Conclusion", "Summary:", or "Note:".
-        - **START WITH THE ANSWER:** Begin your response with a direct answer.
+        - **DO NOT SHOW YOUR WORK:** Do not include sections like "Analysis", "Conclusion", "Summary:", or "Note:". Do not explain your step-by-step process.
+        - **START WITH THE ANSWER:** Begin your response with a a direct answer to the user's question.
         - **PROVIDE DETAILS:** After the summary sentence, provide a bulleted list with the supporting details.
+
 
         ---
         HANDLING SPECIAL CASES:
 
         - **If `status` is `empty`:** State that you could not find the requested information.
-        - **If `status` is `error`:** State that there was a technical problem.
+        - **If `status` is `error`:** State that there was a technical problem retrieving the data.
 
         ---
         Factual Documents:
